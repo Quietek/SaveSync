@@ -5,22 +5,22 @@ This is a tool to sync Steam Save Games across PCs, regardless of if they suppor
 Python
 ## Installation
 First clone this github repository to a local directory
-'''$ git clone'''
+    $ git clone
 
 Next move the downloaded folder to the desired location and change the working directory to your new folder:
-'''$ mv SteamSync /mnt/USB1/
-$ cd /mnt/USB1/SteamSync'''
+    $ mv SteamSync /mnt/USB1/
+    $ cd /mnt/USB1/SteamSync
 
 Make SteamSync.py and setup.py executable:
-'''$ chmod +x SteamSync.py
-$ chmod +x setup.py'''
+    $ chmod +x SteamSync.py
+    $ chmod +x setup.py
 
 Run setup.py to initialize the database, followed by SteamSync.py to create the necessary local configuration files and run your first SaveGame Backup
-'''$ python setup.py
-$ python SteamSync.py'''
+    $ python setup.py
+    $ python SteamSync.py
 
 ## Usage
 After initial setup simply navigate to the directory where the executables are located, and run SteamSync.py
-'''$ cd .../SteamSync/
-$ python SteamSync.py'''
+    $ cd .../SteamSync/
+    $ python SteamSync.py
 
