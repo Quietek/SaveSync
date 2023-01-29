@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<PlayerCharacter Name="Daylen" Folder="Daylen" Portrait="Daylen_portrait.png" Avatar="Daylen.jpg" Race="3" Class="2" Gender="1" Area="" Origin="4" SoundSet="ss_pc_mhuman_wise" Money="0" CurrentHealth="85" MaxHealth="85" CurrentStamina="135" MaxStamina="150" Level="1" XP="0" XPNeeded="1" Platform="PC" Tint="1">
+    <SpellList>
+        <Spell Index="0" ID="4023" />
+        <Spell Index="1" ID="200254" />
+        <Spell Index="2" ID="10001" />
+        <Spell Index="3" ID="11106" />
+    </SpellList>
+    <TalentList />
+    <SkillList>
+        <Skill Index="0" ID="4001" />
+        <Skill Index="1" ID="4002" />
+        <Skill Index="2" ID="100061" />
+        <Skill Index="3" ID="100110" />
+        <Skill Index="4" ID="100100" />
+    </SkillList>
+    <StatList>
+        <Strength Base="11" Modifier="0" />
+        <Dexterity Base="11" Modifier="0" />
+        <Willpower Base="16" Modifier="1" />
+        <Magic Base="19" Modifier="0" />
+        <Cunning Base="12" Modifier="0" />
+        <Constitution Base="10" Modifier="0" />
+    </StatList>
+    <HeroicStatList>
+        <number_of_kills ID="1001" Current="-1" Base="0" Total="0" />
+        <total_damage_dealt ID="1002" Current="-1" Base="0" Total="0" />
+        <total_friendly_fire ID="1003" Current="-1" Base="0" Total="0" />
+        <most_damage_hit ID="1004" Current="-1" Base="0" Total="0" />
+        <total_damage_percent ID="1005" Current="-1" Base="0" Total="0" />
+        <hit_rate ID="1006" Current="-1" Base="0" Total="0" />
+        <most_powerful_foe_slain ID="1007" Current="-1" Base="0" Total="0" />
+        <total_injuries_incurred ID="1008" Current="-1" Base="0" Total="0" />
+        <most_powerful_rating ID="1009" Current="-1" Base="0" Total="0" />
+        <attack_count ID="1010" Current="-1" Base="0" Total="0" />
+        <hit_count ID="1011" Current="-1" Base="0" Total="0" />
+    </HeroicStatList>
+    <HeroicPartyStatList>
+        <total_creatures_slain ID="2001" Current="-1" Base="0" Total="0" />
+        <total_damage_party ID="2002" Current="-1" Base="0" Total="0" />
+        <most_powerful_foe_slain_party ID="2003" Current="-1" Base="0" Total="0" />
+        <kills_demons ID="2004" Current="-1" Base="0" Total="0" />
+        <kills_fantastical ID="2005" Current="-1" Base="0" Total="0" />
+        <kills_constructs ID="2006" Current="-1" Base="0" Total="0" />
+        <kills_humanoids ID="2007" Current="-1" Base="0" Total="0" />
+        <kills_darkspawn ID="2008" Current="-1" Base="0" Total="0" />
+        <kills_bosses ID="2009" Current="-1" Base="0" Total="0" />
+        <kills_dragonkin ID="2010" Current="-1" Base="0" Total="0" />
+        <kills_corrupted ID="2011" Current="-1" Base="0" Total="0" />
+        <kills_vermin ID="2012" Current="-1" Base="0" Total="0" />
+        <kills_animals ID="2013" Current="-1" Base="0" Total="0" />
+        <kills_harmless ID="2014" Current="-1" Base="0" Total="0" />
+        <stealing_success ID="2015" Current="-1" Base="0" Total="0" />
+        <stealing_failure ID="2016" Current="-1" Base="0" Total="0" />
+        <most_money_ever ID="2017" Current="-1" Base="0" Total="0" />
+        <money_spent ID="2018" Current="-1" Base="0" Total="0" />
+        <total_dialogues_started ID="2019" Current="-1" Base="0" Total="0" />
+        <number_of_codex_entries ID="2020" Current="-1" Base="0" Total="0" />
+        <total_miles_walked ID="2021" Current="-1" Base="0" Total="0" />
+        <percent_areas_explored ID="2022" Current="-1" Base="0" Total="0" />
+        <total_time_played ID="2023" Current="-1" Base="0" Total="0" />
+        <previous_money ID="2024" Current="-1" Base="0" Total="0" />
+        <current_time_played ID="2025" Current="-1" Base="0" Total="0" />
+        <position_x ID="2026" Current="-1" Base="0" Total="0" />
+        <position_y ID="2027" Current="-1" Base="0" Total="0" />
+        <total_meters_walked ID="2028" Current="-1" Base="0" Total="0" />
+        <most_powerful_rating_party ID="2029" Current="-1" Base="0" Total="0" />
+        <formatted_time ID="2030" Current="-1" Base="0" Total="2" />
+        <items_crafted ID="2031" Current="-1" Base="0" Total="0" />
+    </HeroicPartyStatList>
+    <EquippedItems ActiveSet="0">
+        <Slot Index="4" ResRef="gen_im_cth_mag_app">
+            <ItemPropertyList>
+                <ItemProperty Index="0" ID="1002" />
+            </ItemPropertyList>
+            <ItemPropertyPowerList>
+                <ItemPropertyPower Index="0" ID="1" />
+            </ItemPropertyPowerList>
+        </Slot>
+        <Slot Index="6" ResRef="gen_im_arm_bot_lgt_ltr" />
+    </EquippedItems>
+</PlayerCharacter>
