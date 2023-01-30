@@ -232,7 +232,7 @@ def CopySaveFromServer(SaveDict):
                 print("Destination: " + Destination)
                 os.makedirs(Destination.replace(FileName,''),exist_ok=True)
                 if os.path.isdir(Destination):
-                    os.rmdir(Destination)
+                    shutil.rmtree(Destination) 
                 shutil.copytree(Source,Destination)
                 print("Save Successfully Copied!")
             elif os.path.sifile(Source):
@@ -256,13 +256,13 @@ def CopySaveFromServer(SaveDict):
             print("Destination: " + Destination)
             os.makedirs(Destination.replace(FileName,''),exist_ok=True)
             if os.path.isdir(Destination):
-                os.rmdir(Destination)
+                shutil.rmtree(Destination)
             shutil.copytree(Source,Destination)
             print("Save Successfully Copied!")
         elif os.path.isfile(Source):
             print("Source: " + Source)
             print("Destination: " + Destination)
-            os.makedirs(Destination.replace(FileName,''))
+            os.makedirs(Destination.replace(FileName,''),exist_ok=True)
             if os.path.isfile(Destination):
                 os.remove(Destination)
             shutil.copy(Source,Destination)
@@ -799,7 +799,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                 SQLUpdateEntry('ClientSaveInfo',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID,'ClientID':ClientID})
                 SQLUpdateEntry('SteamApps',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID})
                 SQLCreateEntry('SaveTimestamps',{'AppID':AppID,'Timestamp':LocalSaveTime})
-            elif MostRecentSaveTime > LokalSaveTime:
+            elif MostRecentSaveTime > LocalSaveTime:
                 print('==========================================================')
                 print("More recent save on server than locally stored located!")
                 print("Title: " + GameDataDict['Title'])
