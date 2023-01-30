@@ -235,7 +235,7 @@ def CopySaveFromServer(SaveDict):
                     shutil.rmtree(Destination) 
                 shutil.copytree(Source,Destination)
                 print("Save Successfully Copied!")
-            elif os.path.sifile(Source):
+            elif os.path.isfile(Source):
                 print("Source: " + Source)
                 print("Destination: " + Destination)
                 os.makedirs(Destination.replace(FileName,''),exist_ok=True)
