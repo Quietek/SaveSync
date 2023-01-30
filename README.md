@@ -3,6 +3,12 @@
 This is a tool to sync Steam Save Games across PCs, regardless of if they support Steam Cloud saves or not. This tool is intended to be used with games that do not support steam cloud, and usage with games that support it may cause unexpected behavior. NOTE: this is still beta software and bugs are expected, use at your own risk! Additionally, the current iteration of this software will only backup files, not overwrite local files. More testing is required before allowing it to potentially overwrite local game saves!
 ## Requirements
 Python
+requests
+vdf
+
+    $ pip install vdf
+    $ pip install requests
+
 ## Installation
 First clone this github repository to a local directory
 
