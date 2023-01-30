@@ -211,41 +211,86 @@ def PushGameSaveToServer(AppID, ClientID, ApplicationDict):
     return 0
 
 def CopySaveFromServer(SaveDict):
+    print("==========================================================================")
+    print("Copying Save From Server...")
     FileName = ''
     BackupDirectory = "Backups" + "/" + SaveDict['AppID'] + "/" + str(SaveDict['Timestamp'])
-    DestinationDirectory = Prefix
+    DestinationDirectory = SaveDict['Prefix']
     for suffix in SaveDict['Suffixes']:
-        RelativeSuffix = GetRelativePath(SaveDict,'/' + suffix)
-        TempSplit = suffix.split('/')
-        if TempSplit[-1] != '':
-            FileName = TempSplit[-1]
+        if suffix != '':
+            RelativeSuffix = GetRelativePath(SaveDict,'/' + suffix)
+            TempSplit = suffix.split('/')
+            if TempSplit[-1] != '':
+                FileName = TempSplit[-1]
+            else:
+                FileName = TempSplit[-2]
+            PrecedingFolders = RelativeSuffix.split(FileName)[0]
+            Source = BackupDirectory + '/' + PrecedingFolders + FileName
+            Destination = SaveDict['Prefix'] + '/' + suffix
+            if os.path.isdir(Source):
+                print("Source: " + Source)
+                print("Destination: " + Destination)
+                os.makedirs(Destination.replace(FileName,''),exist_ok=True)
+                if os.path.isdir(Destination):
+                    os.rmdir(Destination)
+                shutil.copytree(Source,Destination)
+                print("Save Successfully Copied!")
+            elif os.path.sifile(Source):
+                print("Source: " + Source)
+                print("Destination: " + Destination)
+                os.makedirs(Destination.replace(FileName,''),exist_ok=True)
+                if os.path.isfile(Destination):
+                    os.remove(Destination)
+                shutil.copy(Source,Destination)
+                print("Save Successfully Copied!")
         else:
-            FileName = TempSplit[-2]
-        PrecedingFolders = RelativeSuffix.split(FileName)[0]
-        Source = BackupDirectory + '/' + PrecedingFolders +'/' + FileName
-        Destination = SaveDict['Prefix'] + '/' + suffix
-        print("Source: " + Source)
-        print("Destination: " + Destination)
+            TempSplit = SaveDict['Prefix'].split('/')
+            if TempSplit[-1] != '':
+                FileName = TempSplit[-1]
+            else:
+                FileName = TempSplit[-2]
+        Source = BackupDirectory + '/'  + FileName
+        Destination = SaveDict['Prefix']
+        if os.path.isdir(Source):
+            print("Source: " + Source)
+            print("Destination: " + Destination)
+            os.makedirs(Destination.replace(FileName,''),exist_ok=True)
+            if os.path.isdir(Destination):
+                os.rmdir(Destination)
+            shutil.copytree(Source,Destination)
+            print("Save Successfully Copied!")
+        elif os.path.isfile(Source):
+            print("Source: " + Source)
+            print("Destination: " + Destination)
+            os.makedirs(Destination.replace(FileName,''))
+            if os.path.isfile(Destination):
+                os.remove(Destination)
+            shutil.copy(Source,Destination)
+            print("Save Successfully Copied!")
     return 0
+
 def CopySaveToServer(SaveDict):
+    print("Copying Save To Server...")
     FileName = ''
     BackupDirectory = "Backups" + "/" + SaveDict['AppID'] + "/" + str(SaveDict['Timestamp'])
     if not os.path.isdir(BackupDirectory):
         os.makedirs(BackupDirectory,exist_ok=True)
-    if len(SaveDict['Suffixes']) == 0:
+    if len(SaveDict['Suffixes']) == 0 or len(SaveDict['Suffixes']) == 1:
         SplitPath = SaveDict['Prefix'].split('/')
         if SplitPath[-1] != '':
             FileName = SplitPath[-1]
         else:
             FileName = SplitPath[-2]
         if os.path.isdir(SaveDict['Prefix']):
+            print("Source: " + SaveDict['Prefix'])
+            print("Destination: " + BackupDirectory + '/' + FileName)
             shutil.copytree(SaveDict['Prefix'],BackupDirectory + '/' + FileName,dirs_exist_ok=True)
-            print("Source: " + SaveDict['Prefix'])
-            print("Destination: " + BackupDirectory + '/' + FileName)
+            print("Save Successfully Copied!")
         else:
-            shutil.copy(SaveDict['Prefix'],BackupDirectory + '/' + FileName)
             print("Source: " + SaveDict['Prefix'])
             print("Destination: " + BackupDirectory + '/' + FileName)
+            shutil.copy(SaveDict['Prefix'],BackupDirectory + '/' + FileName)
+            print("Save Successfully Copied!")
     else:
         for suffix in SaveDict['Suffixes']:
             RelativeSuffix= GetRelativePath(SaveDict,'/' + suffix)
@@ -257,17 +302,20 @@ def CopySaveToServer(SaveDict):
             PrecedingFolders = RelativeSuffix.split(FileName)[0]
             os.makedirs(BackupDirectory+'/'+PrecedingFolders,exist_ok=True)
             if os.path.isdir(SaveDict['Prefix'] + '/' + suffix):
-                shutil.copytree(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
                 print("Source: " + SaveDict['Prefix'] + '/' + suffix)
                 print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                shutil.copytree(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                print("Save Successfully Copied!")
             elif PrecedingFolders == '':
-                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
                 print("Source: " + SaveDict['Prefix'] + '/' + suffix)
                 print("Destination: " + BackupDirectory + '/' + FileName)
+                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
+                print("Save Successfully Copied!")
             else:
-                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
                 print("Souce: " + SaveDict['Prefix'] + '/' + suffix)
                 print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                print("Save Successfully Copied!")
     return 0
 
 def GetPrefixAndSuffixes(PathList):
@@ -735,6 +783,10 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
             else:
                 LocalSaveTime = GetTimeModified(PathPrefix)
             if LocalSaveTime > MostRecentSaveTime:
+                print('==========================================================')
+                print("More recent save than registered to server located!")
+                print("Title: " + GameDataDict['Title'])
+                print("AppID: " + AppID)
                 SaveDict['Timestamp'] = LocalSaveTime
                 SaveDict['Prefix'] = PathPrefix
                 SaveDict['Suffixes'] = Suffixes
@@ -747,7 +799,11 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                 SQLUpdateEntry('ClientSaveInfo',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID,'ClientID':ClientID})
                 SQLUpdateEntry('SteamApps',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID})
                 SQLCreateEntry('SaveTimestamps',{'AppID':AppID,'Timestamp':LocalSaveTime})
-            elif MostRecentSaveTime > LocalSaveTime:
+            elif MostRecentSaveTime > LokalSaveTime:
+                print('==========================================================')
+                print("More recent save on server than locally stored located!")
+                print("Title: " + GameDataDict['Title'])
+                print("AppID: " + AppID)
                 SaveDict['Timestamp'] = MostRecentSaveTime
                 SaveDict['Prefix'] = PathPrefix
                 SaveDict['Suffixes'] = Suffixes
@@ -771,7 +827,8 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
             FoundPaths = []
             for entry in VerifiedDataDict:
                 if entry['Found']:
-                    FoundPaths.append(entry['AbsoluteSavePath'])
+                    print(entry)
+                    FoundPaths.append(entry['AbsolutePath'])
             if len(FoundPaths) > 1:
                 (Prefix, Suffixes) = GetPrefixAndSuffixes(FoundPaths)
                 for suffix in Suffixes:
@@ -785,6 +842,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
             if LocalSaveTime > MostRecentSaveTime:
                 response = ''
                 while(response not in ['1','2','3']):
+                    print('==========================================================')
                     print('Unsynced Client has more recent save than server')
                     print('Game Title: ' + GameDataDict['Title'])
                     print('Please Select an option:')
@@ -793,6 +851,9 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                     print('3. Do not sync this game save with this client')
                     response = input('Type the corresponding number (1,2,3): ')
                 if response == '1':
+                    print("More recent save than registered to server located!")
+                    print("Title: " + GameDataDict['Title'])
+                    print("AppID: " + AppID)
                     SaveDict['Timestamp'] = LocalSaveTime
                     SaveDict['Prefix'] = Prefix
                     SaveDict['Suffixes'] = Suffixes
@@ -810,6 +871,9 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                         for suffix in Suffixes:
                             SQLCreateEntry('ClientSuffixes',{'AppID': AppID, 'ClientID': ClientID, 'Suffix': suffix})
                 elif response == '2':
+                    print("More recent save on server than locally stored located!")
+                    print("Title: " + GameDataDict['Title'])
+                    print("AppID: " + AppID)
                     SaveDict['Timestamp'] = MostRecentSaveTime
                     SaveDict['Prefix'] = Prefix
                     SaveDict['Suffixes'] = Suffixes
@@ -819,7 +883,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                     SaveDict['Home'] = os.path.expanduser('~')
                     SaveDict['InstallDir'] = InstallDir
                     CopySaveFromServer(SaveDict)
-                    SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 0, 'InstallPath': InstallPath.replace('\'','\'\''), 'MostRecentSaveTime': MostRecentSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')})
+                    SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 0, 'InstallPath': InstallDir.replace('\'','\'\''), 'MostRecentSaveTime': MostRecentSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')})
                     SQLCreateEntry('ClientPrefixes',{'AppID': AppID, 'ClientID': ClientID, 'Prefix':Prefix.replace('\'','\'\'')})
                     if len(Suffixes) > 0:
                         for suffix in Suffixes:
@@ -829,12 +893,16 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
             else:
                 AbsolutePaths = []
                 for path in RelativePaths:
-                    AbsolutePaths.append(GetAbsolutePath(path))
+                    AbsolutePaths.append(GetAbsolutePath(GameDataDict,path))
                 if len(AbsolutePaths) > 1:
                     (Prefix, Suffixes) = GetPrefixAndSuffixes(AbsolutePaths)
                 else:
                     Prefix = AbsolutePaths[0]
                     Suffixes = ['']
+                print('==========================================================')
+                print("More recent save on server than locally stored located!")
+                print("Title: " + GameDataDict['Title'])
+                print("AppID: " + AppID)
                 SaveDict['Timestamp'] = MostRecentSaveTime
                 SaveDict['Prefix'] = Prefix
                 SaveDict['Suffixes'] = Suffixes
@@ -854,7 +922,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
         PCGWDict['Title'] = AppVDFData['AppState']['name']
         if PCGWDict['Found'] and (PCGWDict['SteamCloud'] == False or (PCGWDict['SteamCloud'] == True and IncludeSteamCloud)):
             print('==========================================================')
-            print('Local Save Data Found!')
+            print('Unregistered Game\'s Local Save Data Found!')
             print('Title: ' + PCGWDict['Title'])
             print('AppID: ' + AppID)
             Suffixes = []
