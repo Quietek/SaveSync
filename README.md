@@ -4,9 +4,10 @@ This is a tool to backup and sync Steam Save Games that do not support Steam Clo
 ## Requirements
 These are required on all PCs you intend to use with this software. Additional steps may be required on some systems.
 - Python
-- pip
 - requests
 - vdf
+
+it's recommended to install these requirements using pip which comes with most python installations:
 
     $ pip install vdf
     $ pip install requests
