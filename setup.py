@@ -95,10 +95,17 @@ if (__name__ == "__main__"):
             HomeDir TEXT,
             ClientName TEXT)""")
             print("Clients Table successfully created!")
-        if len(Tables) != 0:
+        if ('ROMSaves',) not in Tables:
+            print("Creating ROMSaves Table...")
+            LibraryConnection.execute("""CREATE TABLE ROMSaves (
+            FileName TEXT NOT NULL,
+            SubFolder TEXT,
+            Timestamp REAL)""")
+        Tables = Cursor.execute("""SELECT name FROM sqlite_master WHERE type='table'""").fetchall()
+        if len(Tables) == 10:
             print("All Tables Needed Present in Database.")
         else:
-            print("Successfully created all tables needed in SQLite Database!")
+            print("Still Missing Tables! Consider deleting your saves.db file and rerunning setup.py")
         GenerateFileExclusions()
         GenerateSavePathFixes()
         LibraryConnection.commit()

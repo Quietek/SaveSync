@@ -17,9 +17,18 @@ from SyncFunctions import *
 if (__name__ == "__main__"):
     HomeDir = os.path.expanduser('~')
     ConfigFile = HomeDir + "/.config/SteamSync/config"
+    SyncRoms = False
+    RomPathList = []
     if os.path.isfile(ConfigFile):
         ClientDictionary = ReadClientConfig(ConfigFile)
     else:
         InteractiveClientCreation()
         ClientDictionary = ReadClientConfig(ConfigFile)
-    FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], ClientDictionary["SteamCloud"])
+    for key in ClientDictionary:
+        if 'ROM' in key:
+            RomPathList.append(ClientDictionary[key])
+            SyncRoms = True
+    if SyncRoms:
+        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], ClientDictionary["SteamCloud"], RomPathList)
+    else:
+        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], ClientDictionary["SteamCloud"], [])

@@ -10,7 +10,7 @@ import sqlite3
 from SQLFunctions import *
 from sys import platform
 
-def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, IncludeSteamCloud):
+def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, RomPath, IncludeSteamCloud):
     print("Registering new client with database...")
     SQLCreateEntry('Clients',{'ClientID':IDNum, 'ClientName':ClientName, 'HomeDir':HomePath, 'SteamPath':SteamPath})
     print("Client Successfully registered!")
@@ -22,6 +22,8 @@ def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, IncludeStea
     File.write("HomeDir=" + HomePath + "/" +'\n')
     File.write("SteamPath=" + SteamPath + "/" + '\n')
     File.write("SteamCloud=" + str(IncludeSteamCloud) + '\n')
+    if RomPath:
+        File.write("ROMs=" + RomPath)
     print("Local configuration file successfully created!")
     return 0
     
@@ -32,9 +34,15 @@ def ReadClientConfig(ConfigPath):
     Lines = File.readlines()
     for line in Lines:
         TempSplit = line.split('=')
-        ReturnDictionary[TempSplit[0]] = TempSplit[1]
-    for key in ReturnDictionary:
-        ReturnDictionary[key] = ReturnDictionary[key].replace("\n","")
+        if ':' not in TempSplit[0] and TempSplit[0] != 'ROMs':
+            ReturnDictionary[TempSplit[0]] = TempSplit[1].replace('\n','')
+        elif ':' in TempSplit[0]:
+            Tag = TempSplit[0].split(':')[1]
+            ReturnDictionary["ROMS/" + Tag] = {}
+            ReturnDictionary["ROMS/" + Tag] = {'Tag':Tag, 'Subfolder':True, 'Path':TempSplit[1].replace('\n','')}
+        else:
+            ReturnDictionary["ROMS"] = {}
+            ReturnDictionary["ROMS"] = {'Tag': '', 'Subfolder':False, 'Path':TempSplit[1].replace('\n','')}
     if "ClientID" in ReturnDictionary:
         ReturnDictionary["ClientID"] = int(ReturnDictionary["ClientID"])
     else:
@@ -51,6 +59,7 @@ def InteractiveClientCreation():
     ExitFlag = False
     HomeDir = os.path.expanduser('~')
     SteamDir = ''
+    RomDir = ''
     ConfigPath = HomeDir + '/.config/SteamSync/config'
     if os.path.isfile(ConfigPath):
         print('Warning! A config file was detected at ' + ConfigPath)
@@ -76,8 +85,11 @@ def InteractiveClientCreation():
             SteamCloud = True
         else:
             SteamCloud = False
+        response = input('Please specify a path to your ROMs folder (or leave blank for none:')
+        if response:
+            RomDir = response
         print("Creating New Client...")
-        CreateClient(ClientID, ClientName, ConfigPath, HomeDir, SteamDir, SteamCloud)
+        CreateClient(ClientID, ClientName, ConfigPath, HomeDir, SteamDir, RomDir, SteamCloud)
         print("Client Successfully Created!")
         return 0
         
