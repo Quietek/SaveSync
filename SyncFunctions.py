@@ -108,16 +108,22 @@ def CopySaveFromServer(SaveDict):
             print("Save Successfully Copied!")
     return 0
 
-def CopySaveToServer(SaveDict):
+def CopySaveToServer(SaveDict, MaxSaves):
     #Terminal Output for debugging
     print("Copying Save To Server...")
-    #Initialize our filename variable as an empty value for use later
-    FileName = ''
-    #Initialize our backup directory using the AppID and timestamp
     BackupDirectory = "./Backups" + "/" + SaveDict['AppID'] + "/" + datetime.datetime.fromtimestamp(SaveDict['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
-    #We make our backup directory if it doesn't exist
+    SaveDirectory = "./Backups" + '/' + SaveDict['AppID'] + '/'
     if not os.path.isdir(BackupDirectory):
         os.makedirs(BackupDirectory,exist_ok=True)
+    #Initialize our filename variable as an empty value for use later
+    FileName = ''
+    SortedSaves = sorted(os.listdir(SaveDirectory))
+    if len(SortedSaves) > MaxSaves:
+        print("Reached Maximum number of saves...")
+        print("Removing oldest save from backups folder...")
+        print("Deleting Directory: " + SaveDirectory + SortedSaves[0])
+        shutil.rmtree(SaveDirectory + SortedSaves[0])
+        print("Directory Successfully Deleted!")
     #If our suffixes are a length of 0 or 1, we know that we only need to worry about 1 file/folder
     if len(SaveDict['Suffixes']) == 0 or len(SaveDict['Suffixes']) == 1:
         #Generate the list of preceding directories using our prefix
@@ -500,7 +506,7 @@ def UIDFinder(Path,Exclusions):
         ReturnPaths.append(Path)
     return ReturnPaths
 
-def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders):
+def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
     print("Syncing ROM Folder...")
     print("Local Path: " + LocalPath)
     print("Server Path: " + ServerPath)
@@ -528,7 +534,7 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders):
             if extension in localfile:
                 SaveFlag = True
         if os.path.isdir(LocalPath + '/' + localfile) and localfile not in ExcludedFolders:
-            SyncRomFolder(LocalPath +'/' + localfile, ServerPath + '/' + localfile, ExcludedFolders)
+            SyncRomFolder(LocalPath +'/' + localfile, ServerPath + '/' + localfile, ExcludedFolders, MaxSaves)
         elif localfile not in ServerFiles and not SaveFlag and localfile not in ExcludedFolders:
             print("Copying ROM From Client...")
             print("Source: " + LocalPath + '/' + localfile)
@@ -560,25 +566,33 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders):
                 print("Source: " + LocalPath + '/' + localfile)
                 print("Destination: " + ServerPath + '/' + localfile)
                 SQLUpdateEntry('ROMSaves',{'Timestamp':LocalTimestamp},{'Filename':localfile,'SubFolder':SubFolder})
-                os.makedirs("./ROMSaves/" + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
+                SQLCreateEntry('ROMSaveTimestamps',{'Filename': localfile, 'Timestamp': LocalTimestamp})
+                os.makedirs("./ROMSaves/" + localfile.replace('.' + Extension,'') + '/' + SubFolder + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
                 shutil.copy(LocalPath + '/' + localfile, ServerPath + '/' + localfile)
-                shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + localfile.replace('\.' + extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
+                shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + SubFolder + '/' + localfile.replace('\.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
+                SortedSaveList = sorted(os.listdir("./ROMSaves/" + Subfolder + localfile.replace('\.' + Extension,'')))
+                if len(SortedSaveList) > MaxSaves:
+                    print("Reached maximum number of backed up saves...")
+                    print("Deleting oldest ROM Save version...")
+                    print("Deleteing Directory: " + "./ROMSaves/" + SubFolder + localfile.replace('\.' + Extension,'') + SortedSaveList[0])
+                    shutil.rmtree("./ROMSaves/" + SubFolder + localfile.replace('\.' + Extension,'') + SortedSaveList[0])
                 print("ROM Save successfully copied!")
         elif SaveFlag and localfile not in ServerFiles and localfile not in ExcludedFolders:
             print("ROM Save found on client that doesn't exist on Server!")
             Extension = localfile.split('.')[-1]
             LocalTimestamp = GetTimeModified(LocalPath + '/' + localfile)
             SQLCreateEntry('ROMSaves',{'FileName':localfile, 'SubFolder':SubFolder,'Timestamp':LocalTimestamp})
+            SQLCreateEntry('ROMSaveTimestamps',{'Filename':localfile,'Timestamp':LocalTimestamp})
             print("Copying local ROM Save to server...")
             print("Source: " + LocalPath + '/' + localfile)
             print("Destination: " + ServerPath + '/' + localfile)
-            os.makedirs("./ROMSaves/" + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
-            shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
+            os.makedirs("./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
+            shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
             shutil.copy(LocalPath + '/' + localfile,ServerPath + '/' + localfile)
             print("ROM Save successfully copied!")
     for serverfile in ServerFiles:
         if os.path.isdir(serverfile) and serverfile not in ExcludedFolders:
-            SyncRomFolder(LocalPath + '/' + serverfile, ServerPath + '/' + serverfile, ExcludedFolders)
+            SyncRomFolder(LocalPath + '/' + serverfile, ServerPath + '/' + serverfile, ExcludedFolders, MaxSaves)
         elif serverfile not in LocalFiles and serverfile not in ExcludedFolders:
             print("File missing from client...")
             print("Copying missing file to client...")
@@ -590,6 +604,11 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders):
  
 #Function to convert PCGW data into a usable filepath
 def GetFilepaths(ApplicationDict, UnprocessedPath):
+    Exclusions = []
+    ExclusionSQLData = SQLGetEntry('FileExclusions',{'AppID':ApplicationDict['AppID']},[])
+    if len(ExclusionSQLData) > 0:
+        for entry in ExclusionSQLData:
+            Exclusions.append(entry['Filename'])
     #Variable initialization
     SubstitutionDict = {}
     ReturnPaths = []
@@ -639,7 +658,7 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
         path = path.replace('\\','/').replace('//','/').replace('}}','')
         #Call our UID finder on our current path if we have any UIDs we need to find before we add it to our return list
         if '{ UID }' in path:
-            ReturnPaths.extend(UIDFinder(path,[]))
+            ReturnPaths.extend(UIDFinder(path,Exclusions))
         #Otherwise we just append our current path to our return list
         else:
             ReturnPaths.append(path)
@@ -787,7 +806,7 @@ def GetPCGWData(ApplicationDict):
 
 
 #Function to help decide how to proceed when syncing a game save
-def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
+def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSaves):
     #Check for the application's existince in our database
     AppSQLData = SQLGetEntry('SteamApps', {'AppID': AppID}, [])
     #Load the vdf data file from our application's library
@@ -868,7 +887,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                 SaveDict['Home'] = os.path.expanduser('~')
                 SaveDict['InstallDir'] = InstallDir
                 #Copy the save to the database server using the information from the dictionary we just created
-                CopySaveToServer(SaveDict)
+                CopySaveToServer(SaveDict, MaxSaves)
                 #Update our SQL database with information on the new newest save
                 SQLUpdateEntry('ClientSaveInfo',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID,'ClientID':ClientID})
                 SQLUpdateEntry('SteamApps',{'MostRecentSaveTime':LocalSaveTime},{'AppID':AppID})
@@ -965,7 +984,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
                     SaveDict['Home'] = os.path.expanduser('~')
                     SaveDict['InstallDir'] = InstallDir
                     #Copy the save to the server with the dictionary we just created
-                    CopySaveToServer(SaveDict)
+                    CopySaveToServer(SaveDict, MaxSaves)
                     #Create SQL Entries for the newly synced save file, setting it as the new most recent save in our database 
                     SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 0, 'InstallPath': InstallPath, 'MostRecentSaveTime': LocalSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')})
                     SQLCreateEntry('ClientPrefixes',{'AppID': AppID, 'ClientID': ClientID, 'Prefix': Prefix.replace('\'','\'\'')})
@@ -1082,7 +1101,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
             SaveDict['Home'] = os.path.expanduser('~')
             SaveDict['InstallDir'] = InstallDir
             #Copy our save to the server now that we've created our SQL entries and compiled our data dictionary
-            CopySaveToServer(SaveDict)
+            CopySaveToServer(SaveDict, MaxSaves)
         #If this is a steam cloud game and we aren't including steam cloud games to sync
         elif PCGWDict['SteamCloud'] and not IncludeSteamCloud:
             #Create a SQL entry to reference that this game is always skipped by any syncing clients
@@ -1090,7 +1109,8 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud):
     return 0
 
 
-def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths):
+def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths, MaxSaves):
+    print("Syncing Game Saves, please do not exit the program until this program has completed running...")
     #Load our vdf file from our path to steam
     PathToVDF = PathToSteam + "steamapps/libraryfolders.vdf"
     LibraryVDFDict = vdf.load(open(PathToVDF))
@@ -1100,11 +1120,13 @@ def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths):
     for Library in LibraryVDFDict['libraryfolders']:
         #We load the path from the library we're currently looking at
         LibraryPath = LibraryVDFDict['libraryfolders'][Library]['path']
+        print("Syncing Games From Steam Library Located at: " + LibraryPath)
         #For every application that's installed to this library
         for AppID in LibraryVDFDict['libraryfolders'][Library]['apps']:
             #We sync the individually installed game using our sync game function
             #NOTE this is a portion of the code that I considered multithreading, but generally it seemed like the performance uplift wouldn't be worthwhile compared to the potential issues with multiple PCGW requests and file locks
-            SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud)
+            SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSaves)
+        print("Finished Syncing Library!")
     if len(ROMPaths) > 1:
         SubFolders = []
         RomRootFolder = ''
@@ -1115,10 +1137,87 @@ def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths):
                 NonRootFolders.append(RomFolder)
             else:
                 RomRootFolder = RomFolder["Path"]
-        SyncRomFolder(RomRootFolder,"./ROMs/",ServerSubFolders)
+        SyncRomFolder(RomRootFolder,"./ROMs/",ServerSubFolders, MaxSaves)
         for folder in NonRootFolders:
-            SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[])
+            SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[], MaxSaves)
     elif len(ROMPaths) == 1:
-        SyncRomFolder(ROMPaths[0]["Path"], "./ROMs/", [])      
+        SyncRomFolder(ROMPaths[0]["Path"], "./ROMs/", [], MaxSaves) 
+    print("Full Client Sync Complete!")     
     return 0
 
+def SyncNonSteamLibrary(ClientID, PathToSteam):
+    Home = os.path.expanduser("~")
+    SearchDirs = []
+    FoundGames = []
+    LocalNonSteamSQLData = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID},[])
+    SteamDirs = os.listdir(PathToSteam + 'steamapps/compatdata/')
+    for directory in SteamDirs:
+        if int(directory) > 1000000000:
+            SearchDirs.append(PathToSteam + 'steamapps/compatdata/' + directory + '/pfx/')
+    if os.path.isdir(Home + 'Games'):
+        TempDirs = os.listdir(Home + 'Games')
+        for tempdir in TempDirs:
+            SearchDirs.append(Home + 'Games' + tempdir)
+    if len(LocalNonSteamSQLData) > 0:
+        for LocalGame in KnownNonSteamSQLData:
+            SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'])
+            FoundGames.append(LocalGame['GameID'])
+    KnownNonSteamSQLData = SQLGetEntry('NonSteamApps',{},[])
+    SearchableGames = []
+    if len(KnownNonSteamSQLData) > 0:
+        for KnownGame in KnownNonSteamSQLData:
+            if KnownGame['GameID'] not in FoundGames:
+                SearchableGames.append(KnownGame)
+    if len(SearchableGames) > 0:
+        for game in SearchableGames:
+            if '{ WINE PREFIX }' in game['RelativeSavePath']:
+                WinPath = game['RelativeSavePath'].replace('{ WINE PREFIX }','')
+                i = 0
+                found = False
+                while i < len(SearchDirs) and not found: 
+                    if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath):
+                        found = True
+                        SQLCreateEntry('NonSteamClientSaves', {'GameID':game['GameID'], 'ClientID':ClientID, 'LocalSavePath':SearchDirs[i] + WinPath})
+                        SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'])
+                    else:
+                        i += 1
+            elif '{ HOME }' in game['RelativeSavePath']:
+                FullPath = game['RelativeSavePath'].replace('{ HOME }',Home)
+                if os.path.isdir(FullPath) or os.path.isfile(FullPath):
+                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'])
+    return 0 
+
+def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime):
+    LocalTimeModified = GetTimeModified(LocalSavePath)
+    Filename = LocalSavePath.split('/')[-1]
+    if Filename == '':
+        Filename = LocalSavePath.split('/')[-2]
+    if LocalTimeModified > ServerSaveTime:
+        print('More recent save on client than on server!')
+        print('Copying Save to server...')
+        BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(LocalTimeModified).strftime('%Y-%m-%d_%H%M%S')
+        print('Source: ' + LocalSavePath)
+        print('Destination: ' + BackupDirectory)
+        if os.path.isdir(LocalSavePath):
+            shutil.copytree(LocalSavePath, BackupDirectory, exists_ok=True)
+        else:
+            shutil.copy(LocalSavePath, BackupDirectory)
+        SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
+        SQLUpdateEntry('NonSteamApps',{'MostRecentSaveTime':LocalTimeModified}, {'GameID':GameID})
+        print('Save successfully copied!')
+    elif ServerSaveTime > LocalTimeModified:
+        print('More recent save on server than on client!')
+        print('Copying Save to client...')
+        BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(ServerSaveTime).strftime('%Y-%m-%d_%H%M%S')
+        print('Source: ' + BackupDirectory + '/' + Filename)
+        print('Destination: ' + LocalSavePath)
+        if os.path.isdir(BackupDirectory + '/' + Filename):
+            if os.path.isdir(LocalSavePath):
+                os.rmtree(LocalSavePath)
+            shutil.copytree(BackupDirectory + '/' + Filename,LocalSavePath,exist_ok=True)
+        elif os.path.isfile(BackupDirectory + '/' + Filename):
+            if os.path.isfile(LocalSavePath):
+                os.remove(LocalSavePath)
+            shutil.copy(BackupDirectory + '/' + Filename, LocalSavePath)
+        print('Save successfully copied!')
+    return 0

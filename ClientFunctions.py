@@ -10,7 +10,7 @@ import sqlite3
 from SQLFunctions import *
 from sys import platform
 
-def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, RomPath, IncludeSteamCloud):
+def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, RomPath):
     print("Registering new client with database...")
     SQLCreateEntry('Clients',{'ClientID':IDNum, 'ClientName':ClientName, 'HomeDir':HomePath, 'SteamPath':SteamPath})
     print("Client Successfully registered!")
@@ -21,7 +21,6 @@ def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, RomPath, In
     File.write("ClientName=" + ClientName + '\n')
     File.write("HomeDir=" + HomePath + "/" +'\n')
     File.write("SteamPath=" + SteamPath + "/" + '\n')
-    File.write("SteamCloud=" + str(IncludeSteamCloud) + '\n')
     if RomPath:
         File.write("ROMs=" + RomPath)
     print("Local configuration file successfully created!")
@@ -47,10 +46,6 @@ def ReadClientConfig(ConfigPath):
         ReturnDictionary["ClientID"] = int(ReturnDictionary["ClientID"])
     else:
         ReturnDictionary["ClientID"] = 0
-    if "SteamCloud" in ReturnDictionary and ReturnDictionary["SteamCloud"] == "True":
-        ReturnDictionary["SteamCloud"] = True
-    else:
-        ReturnDictionary["SteamCloud"] = False
     return ReturnDictionary
 
 def InteractiveClientCreation():
@@ -64,7 +59,8 @@ def InteractiveClientCreation():
     if os.path.isfile(ConfigPath):
         print('Warning! A config file was detected at ' + ConfigPath)
         print('Continuing to run this program may overwrite your current configuration, and incorrectly sync your save files.')
-        response = input('Please confirm whether to proceed with client creation in database and overwriting the present config file (y/n)')
+        print('Please make sure you aren\'t using this client with multiple SteamSync Servers before proceeding.')
+        response = input('Please confirm whether to proceed with client creation in database and overwriting the present config file [y/N]: ')
         if response.lower() in ['y','yes']:
             ExitFlag = False
         else:
@@ -73,26 +69,22 @@ def InteractiveClientCreation():
         print("This program will create a new client in the SteamSync database and create a local config file at " + ConfigPath)
         response = input('Please type a friendly name for this client: ')
         ClientName = response
-        response = input('Please specify the path to your steam install: (default: ' + HomeDir + '/.local/share/Steam/ )')
+        response = input('Please specify the path to your steam install: (default: ' + HomeDir + '/.local/share/Steam/ ): ')
         while (not os.path.isdir(response)) and response != '':
-            response = input('The specified path could not be found, please try again (or leave blank for the default path')
+            response = input('The specified path could not be found, please try again (or leave blank for the default path): ')
         if response != '':
             SteamDir = response
         else:
             SteamDir = HomeDir + '/.local/share/Steam'
-        response = input('Do you wish to include games already synced through Steam Cloud? (y/n): ')
-        if response.lower() in ['y','yes']:
-            SteamCloud = True
-        else:
-            SteamCloud = False
-        response = input('Please specify a path to your ROMs folder (or leave blank for none:')
+        response = input('Please specify a path to your ROMs folder (or leave blank to skip Syncing ROMs on this client): ')
         if response:
             RomDir = response
         print("Creating New Client...")
-        CreateClient(ClientID, ClientName, ConfigPath, HomeDir, SteamDir, RomDir, SteamCloud)
+        CreateClient(ClientID, ClientName, ConfigPath, HomeDir, SteamDir, RomDir)
         print("Client Successfully Created!")
         return 0
         
-        
+def InteractiveDatabaseManagement():
+    return 0        
         
 

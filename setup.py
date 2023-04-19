@@ -7,13 +7,50 @@ import vdf
 import re
 import time
 import sqlite3
+from SQLFunctions import *
+from ClientFunctions import *
 from sys import platform
 
 
 def GenerateFileExclusions():
+    #This Function is used to create a list of folder or file names that should be ignored when UID Finder is called
+    #Metro 2033 and Metro Last Light both have folders that need to be ignored, titled 2033 and pc respectively
+    SQLCreateEntry('FileExclusions',{'AppID':287390, 'Filename':'pc'})
+    SQLCreateEntry('FileExclusions',{'AppID':286690, 'Filename':'2033'})
+    #Star Wars X-Wing Alliance matches on .plt files, but we can ignore the test files
+    SQLCreateEntry('FileExclusions',{'AppID':361670, 'Filename':'Test0.plt'})
+    SQLCreateEntry('FileExclusions',{'AppID':361670, 'Filename':'Test1.plt'})
     return 0
 
-def GenerateSavePathFixes():
+def GenerateSkippedGames():
+    #This Function is used to create a list of games that are always skipped in the database
+    #Hyper Light Drifter is always skipped since it uses PC specific save files
+    SQLCreateEntry('SteamApps',{'AppID':257850, 'AlwaysSkipped':1, 'Title':'Hyper Light Drifter'})
+    return 0
+
+def GenerateGlobalVars():
+    response = input("Please specify the maximum number of saves you wish to keep backed up (default: 50): ")
+    MaxSaves = 0
+    IncludeSteamCloud = False
+    if response == '':
+        MaxSaves = 50
+    else:
+        MaxSaves = int(response)
+    response = input("Do you wish to include Steam Cloud saves in your save game syncs? [y/N]: ")
+    if response.lower() not in ['y','yes']:
+        IncludeSteamCloud = False
+    else:
+        IncludeSteamCloud = True
+    ExistingSteamCloudEntry = SQLGetEntry('GlobalVars',{'Key':'IncludeSteamCloud'},[])
+    ExistingMaxSavesEntry = SQLGetEntry('GlobalVars',{'Key':'MaxSaves'},[])
+    if len(ExistingSteamCloudEntry) != 0:
+        SQLUpdateEntry('GlobalVars',{'Value':str(IncludeSteamCloud)},{'Key':'IncludeSteamCloud'})
+    else:
+        SQLCreateEntry('GlobalVars',{'Key':'IncludeSteamCloud','Value':str(IncludeSteamCloud)})
+    if len(ExistingMaxSavesEntry) != 0:
+        SQLUpdateEntry('GlobalVars',{'Value':str(MaxSaves)})
+    else:
+        SQLCreateEntry('GlobalVars',{'Key':'MaxSaves','Value':str(MaxSaves)})
     return 0
 
 
@@ -100,13 +137,49 @@ if (__name__ == "__main__"):
             LibraryConnection.execute("""CREATE TABLE ROMSaves (
             FileName TEXT NOT NULL,
             SubFolder TEXT,
-            Timestamp REAL)""")
+            Timestamp REAL);""")
+            print("ROMSaves Table successfully created!")
+        if ('RomSaveTimestamps',) not in Tables:
+            print("Creating ROMSaves Table...")
+            LibraryConnection.execute("""CREATE Table RomSaveTimestamps (
+            FileName TEXT NOT NULL,
+            Timestamp REAL);""")
+            print("RomSaveTimestamps Table successfully created!")
+        if ('NonSteamApps',) not in Tables:
+            print("Creating NonSteamApps Table...")
+            LibraryConnection.execute(""" CREATE TABLE NonSteamApps (
+            GameID INT NOT NULL,
+            Title TEXT,
+            RelativeSavePath TEXT,
+            MostRecentSaveTime REAL);""")
+            print("NonSteamApps Table successfully created!")
+        if ('NonSteamClientSaves',) not in Tables:
+            print("Creating NonSteamClientSaves Table...")
+            LibraryConnection.execute("""CREATE TABLE NonSteamClientSaves (
+            GameID INT NOT NULL,
+            ClientID INT NOT NULL,
+            LocalSavePath TEXT);""")
+            print("NonSteamClientSaves Table successfully created!")
+        if ('NonSteamSaveTimestamps',) not in Tables:
+            print("Creating NonSteamSaveTimestamps Table...")
+            LibraryConnection.execute("""CREATE TABLE NonSteamSaveTimestamps (
+            GameID INT NOT NULL,
+            Timestamp REAL);""")
+            print("NonSteamSaveTimestamps Table successfully created!")
+        if ('GlobalVars',) not in Tables:
+            print("Creating GlobalVars Table...")
+            LibraryConnection.execute("""CREATE TABLE GlobalVars (
+            Key Text,
+            Value TEXT);""")
+            print("GlobalVars Table successfully created!")
         Tables = Cursor.execute("""SELECT name FROM sqlite_master WHERE type='table'""").fetchall()
-        if len(Tables) == 10:
+        if len(Tables) == 15:
             print("All Tables Needed Present in Database.")
         else:
             print("Still Missing Tables! Consider deleting your saves.db file and rerunning setup.py")
         GenerateFileExclusions()
-        GenerateSavePathFixes()
+        GenerateSkippedGames()
+        GenerateGlobalVars()
+        InteractiveClientCreation()
         LibraryConnection.commit()
         LibraryConnection.close()

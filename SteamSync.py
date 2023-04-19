@@ -19,6 +19,14 @@ if (__name__ == "__main__"):
     ConfigFile = HomeDir + "/.config/SteamSync/config"
     SyncRoms = False
     RomPathList = []
+    IncludeSteamCloud = False
+    MaxSaves = int(SQLGetEntry('GlobalVars',{'Key':'MaxSaves'},[])[0]['Value'])
+    RawSteamCloud = SQLGetEntry('GlobalVars',{'Key':'IncludeSteamCloud'},[])[0]['Value']
+   
+    if RawSteamCloud == 'True':
+        IncludeSteamCloud = True
+    else:
+        IncludeSteamCloud = False
     if os.path.isfile(ConfigFile):
         ClientDictionary = ReadClientConfig(ConfigFile)
     else:
@@ -29,6 +37,6 @@ if (__name__ == "__main__"):
             RomPathList.append(ClientDictionary[key])
             SyncRoms = True
     if SyncRoms:
-        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], ClientDictionary["SteamCloud"], RomPathList)
+        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], IncludeSteamCloud, RomPathList, MaxSaves)
     else:
-        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], ClientDictionary["SteamCloud"], [])
+        FullSync(ClientDictionary["SteamPath"], ClientDictionary["ClientID"], IncludeSteamCloud, [], MaxSaves)
