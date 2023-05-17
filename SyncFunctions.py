@@ -571,7 +571,6 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
             ServerTimestamp = SQLGetMinMax('ROMSaves','Timestamp',{'Filename':localfile, 'SubFolder':SubFolder})[0]['MaxVal']
             #We get the file's extension
             Extension = localfile.split('.')[-1]
-            print(datetime.datetime.fromtimestamp(ServerTimestamp).strftime('%Y-%m-%d_%H%M%S'))
             #We overwrite the local save with the server save if the server save is more recent
             if ServerTimestamp > LocalTimestamp:
                 print("More Recent ROM Save found on server than on client!")
