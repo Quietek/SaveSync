@@ -1,0 +1,14 @@
+# ~/.config/systemd/user/
+
+[Unit]
+Description=Steamsync autorun on sd card being plugged in
+Requires=run-media-mmcblk0p1.mount
+After=run-media-mmcblk0p1.mount
+
+[Service]
+Type=oneshot
+WorkingDirectory=/run/media/mmcblk0p1/SteamSync/
+ExecStart=/usr/bin/python ./SteamSync.py --sync
+
+[Install]
+WantedBy=run-media-mmcblk0p1.mount
