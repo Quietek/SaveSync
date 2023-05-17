@@ -8,7 +8,7 @@ def SQLCreateEntry(TableName, Values):
     #Initialize return value 0 indicates success
     ReturnVal = 0
     #connect to our database, hardcoded as saves.db
-    LibraryConnection = sqlite3.connect('saves.db')
+    LibraryConnection = sqlite3.connect('./saves.db')
     #On Connection success
     if LibraryConnection:
         #Initialize our cursor for later function calls
@@ -49,9 +49,9 @@ def SQLCreateEntry(TableName, Values):
 
 #Helper function to construct queries for getting data from our SQLite Database
 #returns a list of dictionaries for ease of use within our other python code while keeping keys in-tact for each individual row
-def SQLGetEntry(TableName, Restrictions, DesiredColumns):
+def SQLGetEntry(TableName, Restrictions, DesiredColumns=[]):
     #Initialize our library connection and our return value
-    LibraryConnection = sqlite3.connect('saves.db')
+    LibraryConnection = sqlite3.connect('./saves.db')
     ReturnList = []
     #On connection success
     if LibraryConnection:
@@ -116,7 +116,7 @@ def SQLGetEntry(TableName, Restrictions, DesiredColumns):
 def SQLUpdateEntry(TableName, Values, Restrictions):
     #Initialize our return value and connect to the database
     ReturnVal = 0
-    LibraryConnection = sqlite3.connect("saves.db")
+    LibraryConnection = sqlite3.connect("./saves.db")
     #On connection success
     if LibraryConnection:
         #Initialize our Query generation
@@ -158,6 +158,122 @@ def SQLUpdateEntry(TableName, Values, Restrictions):
         print("ERROR: SQLite Database Connection error")
     #Return our return value
     return ReturnVal
+
+
+def SQLGetEntriesWithThreshold(TableName, ThresholdColumnName, ThresholdValue, Tag, Restrictions):
+     #Initialize our library connection and our return value
+    LibraryConnection = sqlite3.connect('./saves.db')
+    ReturnList = []
+    #On connection success
+    if LibraryConnection:
+        #Initialize our query
+        Query = ''
+        #Check if we specify specific columns we want
+        if DesiredColumns != []:
+            #if we do have specific columns specified
+            Query = 'SELECT '
+            #Constructing our query with each column name that was passed in
+            for column in DesiredColumns:
+                Query += column + ', '
+            #remove the last comma and space from the query, and add a space
+            Query = Query[0:-2] + ' '
+            #Create our from query
+            Query += 'FROM ' + TableName
+        else:
+            #If we don't specify specific columns, we get all the columns using the * character
+            Query = 'SELECT * FROM ' + TableName
+        #If we have restrictions in place
+        Query += '\n'
+        Query += 'WHERE '
+        if tag == 'gt':
+            Query += ThresholdColumnName + ' > ' + str(ThresholdValue)
+        elif tag == 'lt':
+            Query += ThresholdColumnName + ' < ' + str(ThresholdValue)
+        elif tag == 'gte':
+            Query += ThresholdColumnName + ' >= ' + str(ThresholdValue)
+        elif tag == 'lte':
+            Query += ThresholdColumnName + ' <= ' + str(ThresholdValue)
+        if Restrictions != {}:
+            #modify the query with our where clause creation
+            Query += '\n'
+            Query += 'AND '
+            #Construct the where clause from our columns and restriction values
+            #NOTE this assumes restrictions will be based on an equal value, not based on other comparisons
+            #This is due to the general idea that we will only want values for specific AppIDs and ClientIDs
+            #May modify later to allow other comparisons, but not a priority
+            for ColumnName in Restrictions:
+                #Must denote strings with 's
+                if type(Restrictions[ColumnName]) == str:
+                    Query += ColumnName + " = '" + Restrictions[ColumnName] + "' AND "
+                #Must convert non-strings to strings for concatenation
+                else:
+                    Query += ColumnName + ' = ' + str(Restrictions[ColumnName]) + ' AND '
+            #We drop the last AND from our statement
+            Query = Query[0:-4]
+        #Execute our query, save data to a cursor so we can get column names and data from an object
+        Cursor = LibraryConnection.execute(Query)
+        #Create an ordered list of our column names from the "description" value of our cursor
+        ColumnNames = [description[0] for description in Cursor.description]
+        #for each row that was returned
+        for row in Cursor:
+            #initialize a temporary dictionary
+            TempDict = {}
+            #map our data into our dictionary with the column name as the key
+            for val, col in enumerate(Cursor.description):
+                TempDict[col[0]] = row[val]
+            #Append our temporary dictionary to our return value
+            ReturnList.append(TempDict)
+        #close our connection
+        LibraryConnection.close()
+    #if connection error
+    #NOTE This shouldn't come up since the code will likely crash if there's an error connecting to the database
+    else:
+        print("ERROR: SQLite Database Connection error")
+    #Return our return value
+    return ReturnList
+
+
+
+def SQLGetMinMax(TableName, NumericColumnName, Restrictions, MinFlag=False):
+    ReturnVal = 0
+    ReturnList = []
+    LibraryConnection = sqlite3.connect("./saves.db")
+    if LibraryConnection:
+        #Initialize our Query generation
+        Query = ''
+        if not MinFlag:
+            Query = 'SELECT MAX(' + NumericColumnName +') as MaxVal'
+        else:
+            Query = 'SELECT MIN(' + NumericColumnName + ') as MinVal'
+        Query += ' FROM ' + TableName
+        if Restrictions != {}:
+            Query += ' WHERE '
+            for column in Restrictions:
+                if type(Restrictions[column]) == str:
+                    Query += column + " = '" + Restrictions[column] + "' AND "
+                else:
+                    Query += column + " = '" + str(Restrictions[column]) + "' AND "
+            Query = Query[0:-4]
+        Cursor = LibraryConnection.execute(Query)
+        #Create an ordered list of our column names from the "description" value of our cursor
+        ColumnNames = [description[0] for description in Cursor.description]
+        #for each row that was returned
+        for row in Cursor:
+            #initialize a temporary dictionary
+            TempDict = {}
+            #map our data into our dictionary with the column name as the key
+            for val, col in enumerate(Cursor.description):
+                TempDict[col[0]] = row[val]
+            #Append our temporary dictionary to our return value
+            ReturnList.append(TempDict)
+        #close our connection
+        LibraryConnection.close()
+    #if connection error
+    #NOTE This shouldn't come up since the code will likely crash if there's an error connecting to the database
+    else:
+        print("ERROR: SQLite Database Connection error")
+    #Return our return value
+    return ReturnList
 
 #Helper function to construct queries to delete rows from specified tables
 def SQLDeleteEntry(TableName, Restrictions):
