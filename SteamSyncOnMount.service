@@ -1,4 +1,4 @@
-# ~/.config/systemd/user/
+# ~/.config/systemd/user/SteamSyncOnMount.service
 
 [Unit]
 Description=Steamsync autorun on sd card being plugged in

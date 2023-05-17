@@ -81,12 +81,41 @@ You can now run SteamSync from the terminal, it will automatically detect whethe
 
     $ python SteamSync.py
     
-After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service file (SteamSyncOnMount.service) to sync whenever the sd card with the SteamSync folder on it is plugged into the Steam Deck is included. You can use the commands below if you want to use and enable the service file. Note that if your SteamSync folder is in a different location, or if you're on a non Steam Deck system, the .service file will require significant modification to get working how you want.
+After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service file (SteamSyncOnMount.service) to sync whenever the sd card with the SteamSync folder on it is plugged into the Steam Deck is included. You can use the commands below if you want to use and enable the service file, you may get an error about the unit file not existing, but you should be fine to disregard that warning.
 
     $ mkdir -p ~/.config/systemd/user
     $ mv SteamSyncOnMount.service ~/.config/systemd/user/
     $ systemctl --user enable SteamSyncOnMount.service
 
+    - NOTE if you want to run a sync before moving your files to another computer, you can simply unplug your sd card, plug it back in, wait a bit, and then unplug your sd card again and it should update the relevant save files. If your steam library is particularly large, or you expect it to copy a lot of data to your sd card, you may want monitor the service to see when it actually finishes executing before unplugging the device. To do so you can run the following from a command line before unplugging your sd card. You can press Ctrl+C in the terminal to exit the first command after you see SteamSync has finished running.
+    
+    $ watch -n 1 systemctl --user status 
+    $ sync
+
+If you're on a different linux system or using a device other than an sd card with the Steam Deck and still want to have the, follow these steps.
+    - NOTE the service file will only execute on device mount, so if your system doesn't automatically mount the device when it's plugged in, or doesn't always mount your removable device to the same directory, you may need to manually mount it to the correct directory either from the command line or your file explorer.
+    - Also, chances are you'll know this if this is relevant to you anyways, but if your linux install doesn't use systemd, this guide won't work for you.
+
+    1. Make sure the device is mounted and accessible
+    2. Make a note of what directory the device is mounted to. If your file explorer doesn't list the full directory path, you can right click and select open terminal/command prompt here, and then run:   
+    
+    $ pwd
+
+    3. run from a command line or terminal:
+
+    $ systemctl list-units -t mount
+
+    4. Find the .mount item listed that is most similar to the filepath that you noted earlier, and copy it to your clipboard (Ctrl+Shift+C if you aren't familiar with terminal keyboard shortcuts)
+    5. Open SteamSyncOnMount.service with a text editor of your choice
+    6. Replace every reference to run-media-mmcblk0p1.mount with the .mount item you copied earlier (This may be Ctrl+Shift+V or just Ctrl+V depending on your text editor)
+    7. Replace the value after WorkingDirectory= with the path to wherever your SteamSync folder is after your device has been mounted.
+    8. Save and exit from your text editor.
+    9. Move the modified service file into your user systemd path, and enable the new service.
+    
+    $ mv SteamSyncOnMount.service ~/.config/systemd/user
+    $ systemctl --user enable SteamSyncOnMount.service
+    
+You should now have a systemd service that will execute a sync whenever the system mounts a device in that directory.
 
 ## Uninstallation
     
@@ -280,6 +309,3 @@ Please keep in mind that this is beta software and I'm a solo developer making t
 
 ## License
 This software is licensed with the GNU General Public License v3, see LICENSE for more details.
-
-
-
