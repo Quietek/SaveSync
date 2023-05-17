@@ -1108,7 +1108,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             #We update the database with the new save timestamp
                             SQLUpdateEntry('NonSteamApps',{ 'MostRecentSaveTime': datetime.datetime.timestamp(NewTimestamp) }, { 'GameID': int(GameIDResponse)})
                             #We call our sync function, which should overwrite the local save since the timestamp on the server is based on the current date/time
-                            SyncNonSteamGame(int(GameIDResponse), ClientSaveInfo[0]['LocalSavePath'], datetime.datetime.timestamp(NewTimestamp), ClientDictionary['ClientID'])
+                            SyncNonSteamGame(int(GameIDResponse), ClientSaveInfo[0]['LocalSavePath'], datetime.datetime.timestamp(NewTimestamp), ClientDictionary['ClientID'], MaxSaves)
                         #We let the user know that rollback is only supported on games that are known to be locally installed
                         #This may not be 100% necessary and may still work even if the game isn't installed locally, but we want to avoid potential issues with cross communication with a client that does have the game installed locally.
                         else:
