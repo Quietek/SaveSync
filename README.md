@@ -45,22 +45,23 @@ These are required on all PCs you intend to use with this software. Additional s
 - requests
 - vdf
 
-The following pip packages are required to be installed. Pip is included with most python installations and linux distributions by default, do note extra steps are required on the steam deck to get it working though:
+The following pip packages are required to be installed. Pip is included with most python installations and linux distributions by default, but some systems may require extra steps to get it installed.
 
     $ pip install vdf
     $ pip install requests
 
-Extra steps are required to get pip working on the steam deck. An executable script has been included in this repository to get pip installed and working as a user-level install. Sudo permissions may be required for chmod to execute correctly, and make sure to restart your terminal before trying to execute pip.
+The Steam Deck is one system that requires extra steps. An executable script has been included in this repository to get pip installed and working as a user-level install.
 
     $ git clone https://github.com/Quietek/SteamSync.git
     $ cd SteamSync
+
+If you've already set a password on your steam deck, you can skip the passwd command.
+ 
+    $ passwd    
     $ chmod +x pip.sh 
     $ ./pip.sh
 
-If you get a permissions error with chmod, you may need to execute it with sudo. If you've already set a password on your steam deck, you can skip the passwd command.
- 
-    $ passwd    
-    $ sudo chmod +x pip.sh 
+You will need to restart your terminal application before proceeding.
 
 ## Installation
 First clone this github repository to a local directory using git on the command line or by using the "download zip" button on github.
