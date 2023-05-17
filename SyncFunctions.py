@@ -1375,10 +1375,6 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
     #data sanitation check, some file path splits may end up resulting in an empty value as the last value, so we pull the value before if this happens
     if Filename == '':
         Filename = LocalSavePath.split('/')[-2]
-            GameID INT NOT NULL,
-            ClientID INT NOT NULL,
-            MostRecentSaveTime REAL,
-            LocalSavePath TEXT);
  
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
     if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
