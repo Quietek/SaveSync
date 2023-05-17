@@ -1403,7 +1403,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         if len(LocalSaveEntry) > 0:
             SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
         else:
-            SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath }):
+            SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath })
         print('Save successfully copied!')
     #If the server has a more recent save than the current client, or we have a flag to indicate we're overwriting a more recent local save with an earlier server save
     elif ServerSaveTime > LocalTimeModified or OverwriteFlag:
@@ -1417,7 +1417,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         if len(LocalSaveEntry) > 0:
             SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
         else:
-            SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath }):       
+            SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath })       
         #We check whether we're copying a folder or a file and copy accordingly
         #NOTE this should overwrite the local data in both cases
         if os.path.isdir(BackupDirectory + '/' + Filename):
