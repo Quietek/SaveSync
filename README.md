@@ -81,7 +81,7 @@ You can now run SteamSync from the terminal, it will automatically detect whethe
 
     $ python SteamSync.py
     
-After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service (SteamSyncOnMount.service) to sync whenever the sd card with the SteamSync folder is plugged into the Steam Deck. Note that if your SteamSync folder is in a different location, or if you're on a non Steam Deck system, the .service file will require significant modification to get working how you want.
+After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service file (SteamSyncOnMount.service) to sync whenever the sd card with the SteamSync folder on it is plugged into the Steam Deck is included. You can use the commands below if you want to use and enable the service file. Note that if your SteamSync folder is in a different location, or if you're on a non Steam Deck system, the .service file will require significant modification to get working how you want.
 
     $ mkdir -p ~/.config/systemd/user
     $ mv SteamSyncOnMount.service ~/.config/systemd/user/
