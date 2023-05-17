@@ -47,17 +47,21 @@ These are required on all PCs you intend to use with this software. Additional s
 
 The following pip packages are required to be installed. Pip is included with most python installations and linux distributions by default, but some systems may require extra steps to get it installed.
 
-    $ pip install vdf
-    $ pip install requests
+    $ pip install vdf requests
+
+### SteamDeck Only
 
 The Steam Deck is one system that requires extra steps. An executable script has been included in this repository to get pip installed and working as a user-level install.
 
     $ git clone https://github.com/Quietek/SteamSync.git
     $ cd SteamSync
 
-If you've already set a password on your steam deck, you can skip the passwd command.
+Set a password, if you haven't already
  
     $ passwd    
+
+make our shell script executable and execute it.
+
     $ chmod +x pip.sh 
     $ ./pip.sh
 
@@ -77,7 +81,7 @@ Make SteamSync.py executable:
 
     $ chmod +x SteamSync.py
 
-You can now run SteamSync from the terminal, it will automatically detect whether it's running for the first time and if it needs to generate a new configuration or initialize the database. It will automatically sync backing up any steam saves it finds on the first run and any ROMs you specify to backup.
+You can now run SteamSync from the terminal, it will automatically detect whether it's running for the first time and if it needs to generate a new configuration or initialize the database. Follow the prompts to register your computer with the database. It will automatically sync after initializing a new client.
 
     $ python SteamSync.py
     
@@ -89,10 +93,10 @@ After the initial run, you can set up any automation/scheduling software you wan
 
     - NOTE if you want to run a sync before moving your files to another computer, you can simply unplug your sd card, plug it back in, wait a bit, and then unplug your sd card again and it should update the relevant save files. If your steam library is particularly large, or you expect it to copy a lot of data to your sd card, you may want monitor the service to see when it actually finishes executing before unplugging the device. To do so you can run the following from a command line before unplugging your sd card. You can press Ctrl+C in the terminal to exit the first command after you see SteamSync has finished running.
     
-    $ watch -n 1 systemctl --user status 
-    $ sync
+        $ watch -n 1 systemctl --user status 
+        $ sync
 
-If you're on a different linux system or using a device other than an sd card with the Steam Deck and still want to have the, follow these steps.
+If you're on a different linux system or using a storage medium other than an sd card with the Steam Deck, and you still want to have SteamSync run automatically when you plug in your storage medium, follow these steps.
     - NOTE the service file will only execute on device mount, so if your system doesn't automatically mount the device when it's plugged in, or doesn't always mount your removable device to the same directory, you may need to manually mount it to the correct directory either from the command line or your file explorer.
     - Also, chances are you'll know this if this is relevant to you anyways, but if your linux install doesn't use systemd, this guide won't work for you.
 
@@ -105,17 +109,17 @@ If you're on a different linux system or using a device other than an sd card wi
 
     $ systemctl list-units -t mount
 
-    4. Find the .mount item listed that is most similar to the filepath that you noted earlier, and copy it to your clipboard (Ctrl+Shift+C if you aren't familiar with terminal keyboard shortcuts)
+    4. Find the .mount item listed that is more or less the same as the filepath that you noted earlier but with -'s instead of /'s, and copy it to your clipboard (Ctrl+Shift+C if you aren't familiar with terminal keyboard shortcuts)
     5. Open SteamSyncOnMount.service with a text editor of your choice
     6. Replace every reference to run-media-mmcblk0p1.mount with the .mount item you copied earlier (This may be Ctrl+Shift+V or just Ctrl+V depending on your text editor)
-    7. Replace the value after WorkingDirectory= with the path to wherever your SteamSync folder is after your device has been mounted.
+    7. Replace the value after WorkingDirectory= with the path to wherever your SteamSync folder is.
     8. Save and exit from your text editor.
     9. Move the modified service file into your user systemd path, and enable the new service.
     
     $ mv SteamSyncOnMount.service ~/.config/systemd/user
     $ systemctl --user enable SteamSyncOnMount.service
     
-You should now have a systemd service that will execute a sync whenever the system mounts a device in that directory.
+You should now have a systemd service that will execute a sync whenever the system mounts a device in that directory. You may also be able to get it as a system level systemd service instead of a user level one, it would also require a system level install the relevant pip packages. I haven't tested using it as a system service, but in theory it should work just the same.
 
 ## Uninstallation
     
@@ -130,7 +134,7 @@ If you use a systemd service to run your syncs, you will need to disable it and 
     $ rm ~/.config/systemd/steamsync.service
 
 ## Usage
-After initial setup navigate to the directory where you saved the folder from Github, and run SteamSync.py to sync your game saves, it will automatically prompt you again to add a new client when used with an unrecognized PC.
+After initial setup navigate to the directory where you saved the folder from Github, and run SteamSync.py --sync to sync your folder. Make sure to run SteamSync.py without command line arguments at least once on each PC you use SteamSync with, this is so that it can prompt you again to add a new client when used with an unrecognized PC.
 
 
 The interactive database manager can be used to handle all the following functionality, save rollback, and manual database edits. Running the interactive database manager is the default behavior for SteamSync after the first run of the program.
@@ -156,12 +160,9 @@ If you want to get a list of games in the database, which includes all known Gam
     
     $ python SteamSync.py --list
 
-Running without command line arguments will bring up the interactive database manager, except in cases where a config needs to be created or the database was just initialized. For more information on the Interactive Database Manager, use the --help command line argument.
-
 Additionally, if you have SteamSync on a removable drive and plan to remove it immediately after a sync has completed, you may need to run an additional command to make sure that the data has indeed finished copying and isn't still in the buffer. This is mostly only needed if you're copying over large amounts of data such as large ROM folders. This command will produce no output, but will not finish executing until the buffer has been completely written to the removable drive.
    
      $ sync
-
 
 
 ## F.A.Q.
@@ -173,10 +174,10 @@ Many games on Steam still do not support steam cloud saves. While this is mostly
 Nope! SteamSync can work great as a simple save backup tool, and can absolutely be run on only one computer if you want to keep backups of your saves in case of an OS reinstall, a drive failure, or any number of other reasons. It also offers save rollback, which may come in handy if you find yourself soft locked in a game or with a corrupted save file on your system.
 
 #### Where am I intended to put the SteamSync folder?
-The SteamSync folder is inteded to be placed on a removable drive such as a flash drive or an SD card. That said, it can be placed and used anywhere, so you can place it on a NAS or even just somewhere generic on your PC's SSD/HDD.
+The SteamSync folder is inteded to be placed on a removable drive such as a flash drive or an SD card. I personally have been keeping it on my Steam Deck's sd card. It can be placed and used anywhere though, so you can place it on a NAS or even just somewhere generic on your PC's SSD/HDD.
 
 #### Is this software compatible with Windows?
-No, and it probably won't be for a while, if ever. While I'd love to say I can just snap my fingers and make this compatible with windows, large portions of the code base are built around the assumption games are running in Proton and using that assumption to determine file paths. Also, the priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck would have you placing SteamSync on a drive with a filesystem format that windows does not support anyways.
+No, and it probably won't be for a while, if ever. While I'd love to say I can just snap my fingers and make this compatible with windows, large portions of the code base are built around the assumption games are running in Proton and using that assumption to determine file paths. Also, the priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck would have you placing SteamSync on a drive with a filesystem format that windows doesn't support anyways.
 
 #### Is there a Decky plugin for this?
 Not currently, I have considered making one, but the last time I took a look, much of decky was still undocumented.  Also, until I feel better about the state of testing and bugs, I want this project to prioritize general linux compatibility rather than focusing on steam deck specific features. I may revisit this later though.
@@ -190,16 +191,14 @@ Not currently, I have considered making one, but the last time I took a look, mu
 #### What's the difference between all the different save types?
 - A Steam save is always from an installed Steam game. This does not include games that are added to steam as non-Steam games or games installed directly into a proton directory.
 - A Non-Steam save is any save file that you manually specify that isn't installed through steam. This could be the path to an emulator's save data for example, or really any game you're willing to manually locate the save data for that you don't own on Steam. This includes games that were installed into a proton directory or added as non-Steam games.
-- A ROM Save file is a save file that is located in the same directory as the ROM itself. This is generally specific to cartridge based systems that stored their game saves on the cartridge. Currently SteamSync only supports this with .sav files, but more can be added to the codebase with relative ease, if you know of a file extension that should be treated as a save instead of a ROM, please consider opening an issue on github.
+- A ROM Save file is a save file that is located in the same directory as the ROM itself. This is generally specific to cartridge based systems that stored their game saves on the cartridge. Currently SteamSync only supports this with .sav files, but more can be added to the codebase with relative ease, if you know of a file extension that should be treated as a save instead of a ROM, please consider letting me know on GitHub.
 
 #### What's an AppID and a GameID and how do I find them?
 The AppID is Steam's way of keeping track of which games are which within the steam database. It's a numerical value that won't be changed and will always refer to the same game. A GameID is a custom value created specifically for SteamSync to keep track of non-Steam games, and are based purely off the order they are added to the database. If you need to find the AppID or GameID of a game that's already registered to the SteamSync database, you can run SteamSync.py with the --list command line argument.
 
 	$ python SteamSync.py --list
 	
-If you need to reference an AppID that isn't registered to the SteamSync database, you're best bet is to search for it here: https://steamdb.info/apps/ or you can get it from the url of the steam store page, which has it's urls formatted like  this:
-
-https://store.steampowered.com/app/[APPID]/[Title]
+If you need to reference an AppID that isn't registered to the SteamSync database, you're best bet is to search for it here: https://steamdb.info/apps/ or you can get it from the url of the steam store page, which has it's urls formatted like  this: https://store.steampowered.com/app/[APPID]/[Title]
 
 #### How do I manually add an undetected Steam Game?
 The interactive Database Manager will help you with that, specifically use option 8 from the main menu, and type the AppID of the game you want to manually specify a path for.
@@ -224,7 +223,7 @@ USER2/Saves/
 #### How does adding multiple ROM folders work?
 - NOTE This functionality is largely untested and should be considered as experimental.
 
-The purpose of adding multiple ROM Folders would be if you want some of your ROM files in one location, while you want the others in another. I refer to these within SteamSync as ROM Subfolders. For example, if you want your snes ROMs in ~/Games/gba/, but you want all your other roms in ~/ROMs/, You can specify a new ROM subfolders by adding/verifying the existence of lines to your config that looks like this: 
+The purpose of adding multiple ROM Folders would be if you want some of your ROM files in one location, while you want the others in another. I refer to these within SteamSync as ROM Subfolders since they're referenced by the subfolder that SteamSync. For example, if you want your gba ROMs in ~/Games/gba/, but you want all your other roms in ~/ROMs/, You can specify a new ROM subfolders by adding/verifying the existence of lines to your config that looks like this: 
 
 ROMs:gba=~/Games/gba/ 
 ROMs=~/ROMs/
@@ -238,7 +237,7 @@ There is also a helper function within the interactive database manager, specifi
 
 
 #### Why do I have to run this from the command line? Wouldn't it be easier/nicer to have a full blown GUI?
-My background is mostly in data analytics, and simply put I have virtually no real experience with UI coding or design. The priority was also getting this working on the command line since that makes it usable with headless servers and should improve compatibility across linux distributions. I may attempt to code in a GUI eventually, but I make no guarantees.
+My background is mostly in data analytics, and simply put I have very little experience with UI coding or design. The priority was also getting this working on the command line since that makes it easy tu run in the background and it should improve compatibility across linux distributions. I may attempt to code in a GUI eventually, but I make no guarantees.
 
 #### How do I install a Windows game with Proton so that it gets automatically detected by SteamSync on new clients?
 - NOTE this is not inclusive of every game, and some games may require you to install additional components via protontricks, winetricks, or a custom proton or wine version.
@@ -258,7 +257,7 @@ My background is mostly in data analytics, and simply put I have virtually no re
 13. Look for numbers that are especially large compared to the others, generally these will be in the 1,000,000,000+ range
 14. Click on each of these large numbered folders, and go into the folder labeled pfx. Try to navigating to where you expect the game save to be on Windows, except replacing C:/ with the path to the drive\_c directory and the Windows username with steamuser. Make a note of the full filepath to the saves or copy it into your clipboard. If your game didn't generate the save filepath immediately, it may be necessary to check each folder for the game's install directory instead, with the same C: and username substitutions.
 15. [ONLY REQUIRED IF YOU RAN AN INSTALLER] Go back into steam, right click the non-Steam game you're trying to sync, click "Browse..." under the "Start In" section, and navigate to the folder where your game was installed, this will be in the same numbered folder as the one you just found as long as the game was installed on the C: drive. Select the game's primary launch executable.
-16. [ONLY REQUIRED IF YOU RAN AN INSTALLER] Launch the game, some games may require you to save once as well to create the necessary directories/files for save files, but most should create the necessary directores just by running the game.
+16. [ONLY REQUIRED IF YOU RAN AN INSTALLER] Launch the game, some games may require you to save once as well to create the necessary directories/files for saves to be detected, but most should create the necessary directores just by running the game.
 17. Run this command from the command line, substituting in the Game Title and the path to the game's save. 
 
 		$ python SteamSync.py --add title={ GAME TITLE HERE } path={ PASTE PATH TO GAME SAVE HERE }
@@ -269,7 +268,8 @@ My background is mostly in data analytics, and simply put I have virtually no re
 
 19. Your game save should now be correctly backed up and should be automatically detected on other clients where the game is installed through Proton. Unfortunately you may have to search for which compatdata directory your non-Steam game gets installed to on each new install to change the shortcut to the the game launcher, but you (hopefully) shouldn't have to add it to SteamSync again. This is necessary because in order to launch the game (if you used an exe installer) you'll need to change the referenced exe in the steam shortcut, and you may need to also launch the game before the save directories needed for automatic detection get created.
 - Games can also be installed through lutris as well and should be detected if they're in the $HOME/Games folder that lutris defaults it's wine prefixes to. The process to sync these games is the same, but instead of searching for the first path to the game's save files within your steam compatdata folder, you're going to be looking in $HOME/Games/[Game Title] instead. Games installed via lutris remain largely untested.
-- If a game's save directory isn't being detected on new machines, you can manually add the relevant path with the --add command line argument, referencing the GameID of the game you are syncing.
+
+If a game's save directory isn't being detected on new machines, you can manually add the relevant path with the --add command line argument, referencing the GameID of the game you are syncing.
 
                 $ python SteamSync.py --add gameid={ GAMEID HERE } path={ PASTE PATH TO GAME SAVE HERE }
 
@@ -279,7 +279,7 @@ I would encourage you to look into using the provided systemd service file as op
 #### A Steam game's save data isn't getting detected or a folder that shouldn't be considered a save is getting detected as a save, what do I do?
 This is likely because the entry on PC Gaming Wiki is either incorrect, incomplete, or entirely missing. If you can, it is highly encouraged to update/create the wiki page with the relevant save game information if you know where it is. That said, there are cases where that either won't help or isn't a simple thing to do, so you can also manually update the entry in the database using the interactive database manager by running python SteamSync.py with no additional command line arguments.
 
-If it's actually the wrong folder is being synced, another possibility is that the UID portion of the file path is located in a folder with non-UID directories, please submit an issue if you find a game with this problem, so far the only ones I have coded around are Metro 2033 and Metro Last Light.
+If there's an incorrect folder being synced, another possibility is that the UID portion of the file path is located in a folder with non-UID directories, please let me know on GitHub if you find a game with this problem, so far the only ones I have found, and that have been explicitly coded around, are Metro 2033 and Metro Last Light.
 
 #### How can I help/contribute to the project?
 Just using the software and helping identify any bugs you encounter is a big help! If you find something not working correctly, taking some time to submit a bug report would be a big help in squashing remaining issues and incompatibilities.

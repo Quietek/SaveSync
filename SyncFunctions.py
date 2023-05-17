@@ -1367,7 +1367,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
 def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, OverwriteFlag=False):
-    LocalSaveEntry = SQLGetEntry('NonSteamApps',{'ClientID':ClientID, 'GameID':GameID})
+    LocalSaveEntry = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID, 'GameID':GameID})
     #We get the time modified of our local save
     LocalTimeModified = GetTimeModified(LocalSavePath)
     #We pull the last file/foldername and specify that that's our filename value
