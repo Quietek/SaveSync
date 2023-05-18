@@ -90,6 +90,7 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
     #We initialize our NewGameID value and read in a list of non-Steam games
     NewGameID = 0
     NonSteamGamesList = SQLGetEntry('NonSteamApps',{}, [])
+    RelativeSavePath = ''
     #Being passed a GameID of 0 indicates we're creating a new save entry in the database
     if GameID == 0:
         #Prompt user for the game's title, technically this isn't required but without it it'll be a lot harder for the user to identify games later
@@ -107,8 +108,6 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
                 #We can't use the min/max function on an empty list, so if the list is empty we just set the game id to 1
                 else:
                     NewGameID = '1'
-                #NOTE need to pass in the HomePath instead of using os.path.expanduser here to allow better compatibility with multiple client's game saves being managed by 1 specific installation
-                HomePath = HomeDir
                 #We read our local save path into our Relative save path before making any substitutions
                 RelativeSavePath = LocalSavePath
                 #We consider any path with the string drive_c in it to be a wine prefix
@@ -119,9 +118,12 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
                     #We substitute in { WINE PREFIX } so that we know where to look when we sync on new clients
                     RelativeSavePath = RelativeSavePath.replace(WinePrefix, '{ WINE PREFIX }')
                 #We need to check whether the home path is somewhere in the remaining file path, this will only happen if we didn't already label this game as being installed to a wine prefix
-                elif HomePath in RelativeSavePath:
+                elif HomeDir in RelativeSavePath:
                     #We replace the string in our relative save path, and write the new entries to the database
-                    RelativeSavePath.replace(HomePath, '{ HOME }')
+                    RelativeSavePath.replace(HomeDir, '{ HOME }')
+                elif HomeDir not in RelativeSavePath:
+                    print(HomeDir)
+                    print(RelativeSavePath)
                 SQLCreateEntry('NonSteamApps', {'GameID': NewGameID, 'Title': GameTitle, 'RelativeSavePath': RelativeSavePath, 'MostRecentSaveTime': 0})
                 SQLCreateEntry('NonSteamClientSaves', {'GameID': NewGameID, 'ClientID':ClientID, 'LocalSavePath':LocalSavePath, 'MostRecentSaveTime': 0 })
     #If a GameID was passed in, we need to handle it differently, since that indicates we're syncing an existing known non-Steam game to a custom location
@@ -451,7 +453,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                     if ResponseGameID != "":
                         print("ERROR: No known saves for game: " + ResponseGameID)
                         print("Please enter a valid game ID or type q to quit.")
-                    ResponseGameID = input('Please select an entry by typing it\s GameID: ')
+                    ResponseGameID = input('Please select an entry by typing it\'s GameID: ')
                     #Check to make sure it's a number before converting to an integer
                     if ResponseGameID.isnumeric():
                         #We check whether the response is in our list or not and exit the while loop if it is
@@ -472,6 +474,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             found = True
                             #And we sync the non-Steam game
                             print('Syncing Game with GameID ' + ResponseGameID + '...')
+                            print(LocalNonSteamGames[i])
                             SyncNonSteamGame(ResponseGameID, LocalNonSteamGames[i]['LocalSavePath'], ServerSaveInformation['MostRecentSaveTime'], ClientDictionary['ClientID'], MaxSaves)
                             print('Finished Sync!')
                         else: 
@@ -812,6 +815,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                     if ResponseGameID.isnumeric():
                         #We Pull the game's SQL data, and let the user know that the only thing they can edit for this specific client is the local save path
                         GameSaveSQLEntry = SQLGetEntry('NonSteamClientSaves', { 'ClientID': ClientDictionary['ClientID'], 'GameID': ResponseGameID }, [])[0]
+                        print('Local Path: ' + GameSaveSQLEntry[0]['LocalSavePath'])
                         print('The only editable entry for this selection is the Local Save Path.')
                         #Prompt the user for the new save path
                         NewPath = input('Please type the new save path for this game: ')

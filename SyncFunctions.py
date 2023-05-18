@@ -1297,6 +1297,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     #We get our SQL data for all the locally known non-Steam games
     if len(LocalNonSteamSQLData) > 0:
         for LocalGame in LocalNonSteamSQLData:
+            print(LocalGame)
             #Sync each game, and add it to our found games list so we know we don't have to search for it later
             SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves)
             FoundGames.append(LocalGame['GameID'])
@@ -1307,12 +1308,13 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
         #iterate through our list of non steam games
         for KnownGame in KnownNonSteamSQLData:
             #We add any games that haven't already been found to our list of games we need to search for
-            if KnownGame['GameID'] not in FoundGames:
+            if int(KnownGame['GameID']) not in FoundGames:
                 SearchableGames.append(KnownGame)
     #If we have at least one non-Steam game that we haven't located
     if len(SearchableGames) > 0:
         #We iterate through our list of unfound non-Steam games
         for game in SearchableGames:
+            FullPath = game['RelativeSavePath']
             print('Searching for game: ' + game['Title'] + ' on new client...')
             #We use the { WINE PREFIX } string in the relative save path to indicate it was installed into a wine prefix
             if '{ WINE PREFIX }' in game['RelativeSavePath']:
@@ -1335,9 +1337,16 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
             #We also handle the home folder differently, since it may be in a different location on different machines
             elif '{ HOME }' in game['RelativeSavePath']:
                 #We get the expected full path of the game we're currently checking
-                FullPath = game['RelativeSavePath'].replace('{ HOME }',Home)
+                FullPath = FullPath.replace('{ HOME }',Home)
                 #We make sure that the file or folder exists, then sync if it does
                 if os.path.isdir(FullPath) or os.path.isfile(FullPath):
+                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+            if '{ UID }' in game['RelativeSavePath']:
+                MatchingPaths = UIDFinder(FullPath)
+                if len(MatchingPaths) > 1:
+                    print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
+                elif len(MatchingPaths) == 1:
+                    FullPath = MatchingPaths[0]
                     SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
     return 0 
 #This function is for 
@@ -1388,7 +1397,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 print("Removing oldest save from backups folder...")
                 print("Deleting Directory: " + BackupDirectoryDirectory + SortedSaves[0])
                 shutil.rmtree(BackupDirectory + SortedSaves[0])
-            print("Directory Successfully Deleted!")
+                print("Directory Successfully Deleted!")
             #SQL database entry creation and updates for our new save save timestamp
             SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
             SQLUpdateEntry('NonSteamApps',{'MostRecentSaveTime':LocalTimeModified}, {'GameID':GameID})
