@@ -103,7 +103,7 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
                 #We get the Maximum ID value from our list of non-steam games and add 1 to create the new GameID
                 #NOTE I initially wanted to just use the length of the list, but we can't do that, since a user can add a game, then add a second game, then delete the first game, resulting in the system trying to create 2 games with the same GameID
                 if len(NonSteamGamesList) > 0:
-                    NewGameID = SQLGetMinMax('NonSteamApps','GameID', {}, False) + 1
+                    NewGameID = SQLGetMinMax('NonSteamApps','GameID', {})[0]['MaxVal'] + 1
                 #We can't use the min/max function on an empty list, so if the list is empty we just set the game id to 1
                 else:
                     NewGameID = '1'

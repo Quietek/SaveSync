@@ -1286,8 +1286,9 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     KnownNonSteamSQLData = SQLGetEntry('NonSteamApps',{},[])
     #We check all the directories in our compatdata folder, adding any that are higher than 1,000,000,000 to our search directories since we know that there are no true AppID's that are that high of a number
     for directory in SteamDirs:
-        if int(directory) > 1000000000:
-            SearchDirs.append(PathToSteam + 'steamapps/compatdata/' + directory + '/pfx/')
+        if directory.isnumeric():
+            if int(directory) > 1000000000:
+                SearchDirs.append(PathToSteam + 'steamapps/compatdata/' + directory + '/pfx/')
     #We also search the $HOME/Games folder if it exists and there are subfolders there as well
     if os.path.isdir(Home + 'Games'):
         TempDirs = os.listdir(Home + 'Games')
@@ -1326,33 +1327,8 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                     if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath):
                         #We flag that we found the save path we were looking for
                         found = True
-                        #We get the time modified of the local save path
-                        LocalSaveTime = GetTimeModified(SearchDirs[i] + WinPath)
-                        #We need to prompt the user for input on what to do if the local save is more recent that the backed up save
-                        #NOTE that the server isn't technically overwritten, so much as a new save timestamp is created and an old one potentially deleted
-                        if game['MostRecentSaveTime'] < LocalSaveTime:
-                            print('More recent save on unsynced client than on server!')
-                            print('1. Overwrite server save with client save')
-                            print('2. Overwrite client save with server save')
-                            Selection = ''
-                            #Sanitary check for an expected input
-                            while Selection.lower() not in [ '1', '2', 'q', 'quit', 'exit' ]:
-                                if Selection != '':
-                                    print('ERROR: expecting a selection from one of the options above by indicating the corresponding number.')
-                                Selection = input('Please select an entry above by typing the corresponding number: ')
-                            #The user want's to sync the local save to the server
-                            if Selection == '1':
-                                #We create a new entry for the non-Steam game, then sync the game
-                                SQLCreateEntry('NonSteamClientSaves', {'GameID':game['GameID'], 'ClientID':ClientID, 'LocalSavePath':SearchDirs[i] + WinPath, 'MostRecentSaveTime':0})
-                                SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
-                            #The user has elected to overwrite the local save with the server save
-                            elif Selection == '2':
-                                #We create a new entry for the non-Steam game's save path, and sync the game
-                                SQLCreateEntry('NonSteamClientSaves', { 'GameID': game['GameID'], 'ClientID': ClientID, 'LocalSavePath': SearchDirs[i] + WinPath, 'MostRecentSaveTime': game['MostRecentSaveTime']})
-                                SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves, True)
                         #We call the SyncNonSteamGame function for any saves that predate our server save time as well
-                        else:
-                            SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+                        SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
                     #Iteration through our list of directories when we haven't found the expected save path yet
                     else:
                         i += 1
@@ -1368,6 +1344,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
 #TODO integrate the number of saves cap that the user specified at the first run
 def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, OverwriteFlag=False):
     LocalSaveEntry = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID, 'GameID':GameID})
+    ContinueFlag = False
     #We get the time modified of our local save
     LocalTimeModified = GetTimeModified(LocalSavePath)
     #We pull the last file/foldername and specify that that's our filename value
@@ -1378,34 +1355,50 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
  
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
     if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
-        #We get the expected backup directory, and output some information to the end user
-        BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(LocalTimeModified).strftime('%Y-%m-%d_%H%M%S')
-        print('More recent save on client than on server!')
-        print('Copying Save to server...')
-        print('Source: ' + LocalSavePath)
-        print('Destination: ' + BackupDirectory)
-        #We check whether we're copying a folder or a file, and copy into the backup directory accordingly
-        if os.path.isdir(LocalSavePath):
-            shutil.copytree(LocalSavePath, BackupDirectory + '/' + Filename, dirs_exist_ok=True)
-        elif os.path.isfile(LocalSavePath):
-            shutil.copy(LocalSavePath, BackupDirectory, exist_ok=True)
-        SortedSaves = sorted(os.listdir(BackupDirectory))
-        if len(SortedSaves) > MaxSaves:
-            print("Reached Maximum number of saves...")
-            print("Removing oldest save from backups folder...")
-            print("Deleting Directory: " + BackupDirectoryDirectory + SortedSaves[0])
-            shutil.rmtree(BackupDirectory + SortedSaves[0])
-        print("Directory Successfully Deleted!")
-        #SQL database entry creation and updates for our new save save timestamp
-        SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
-        SQLUpdateEntry('NonSteamApps',{'MostRecentSaveTime':LocalTimeModified}, {'GameID':GameID})
-        #We need to update our SQL entry for this client with the new timestamp, or create a new entry if one doesn't exist
-        if len(LocalSaveEntry) > 0:
-            SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
-        else:
-            SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath })
-        print('Save successfully copied!')
-    #If the server has a more recent save than the current client, or we have a flag to indicate we're overwriting a more recent local save with an earlier server save
+        if len(LocalSaveEntry) == 0:
+            print('Unsynced Client has more recent save than server!')
+            print('1. Set new client\'s save as the most recent on the server')
+            print('2. Overwrite this client\'s save with the most recent save on the server')
+            Selection = ''
+            while Selection.lower() not in ['1','2','q','quit','exit']:
+                if Selection != '':
+                    print('ERROR: ' + Selection +' is not a recognized option. Please select an option from the list above or type quit to exit')
+                Selection = input("Please select an entry by typing the corresponding number: ")
+            if Selection == '1':
+                ContinueFlag = True
+            elif Selection == '2':
+                SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, True)
+        elif len(LocalSaveEntry) > 0:
+            ContinueFlag = True
+        if ContinueFlag:
+            #We get the expected backup directory, and output some information to the end user
+            BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(LocalTimeModified).strftime('%Y-%m-%d_%H%M%S')
+            print('More recent save on client than on server!')
+            print('Copying Save to server...')
+            print('Source: ' + LocalSavePath)
+            print('Destination: ' + BackupDirectory)
+            #We check whether we're copying a folder or a file, and copy into the backup directory accordingly
+            if os.path.isdir(LocalSavePath):
+                shutil.copytree(LocalSavePath, BackupDirectory + '/' + Filename, dirs_exist_ok=True)
+            elif os.path.isfile(LocalSavePath):
+                shutil.copy(LocalSavePath, BackupDirectory, exist_ok=True)
+            SortedSaves = sorted(os.listdir(BackupDirectory))
+            if len(SortedSaves) > MaxSaves:
+                print("Reached Maximum number of saves...")
+                print("Removing oldest save from backups folder...")
+                print("Deleting Directory: " + BackupDirectoryDirectory + SortedSaves[0])
+                shutil.rmtree(BackupDirectory + SortedSaves[0])
+            print("Directory Successfully Deleted!")
+            #SQL database entry creation and updates for our new save save timestamp
+            SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
+            SQLUpdateEntry('NonSteamApps',{'MostRecentSaveTime':LocalTimeModified}, {'GameID':GameID})
+            #We need to update our SQL entry for this client with the new timestamp, or create a new entry if one doesn't exist
+            if len(LocalSaveEntry) > 0:
+                SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
+            else:
+                SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath })
+            print('Save successfully copied!')
+        #If the server has a more recent save than the current client, or we have a flag to indicate we're overwriting a more recent local save with an earlier server save
     elif ServerSaveTime > LocalTimeModified or OverwriteFlag:
         #We get the expected backup directory and output some information to the end user
         BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(ServerSaveTime).strftime('%Y-%m-%d_%H%M%S')
