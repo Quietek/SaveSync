@@ -474,6 +474,8 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             print('Syncing Game with GameID ' + ResponseGameID + '...')
                             SyncNonSteamGame(ResponseGameID, LocalNonSteamGames[i]['LocalSavePath'], ServerSaveInformation['MostRecentSaveTime'], ClientDictionary['ClientID'], MaxSaves)
                             print('Finished Sync!')
+                        else:
+							i += 1
             #Let the user know if there are no known installed non-Steam games
             else:
                 print('ERROR: No known installed non-Steam games.')
