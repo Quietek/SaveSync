@@ -98,6 +98,7 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
         #Quick catch to make sure the user isn't trying to exit the program
         if GameTitle.lower() not in ['q', 'quit', 'exit' ]:
             #Prompt the user for the game's save game path
+            print('You can specify a PC specific generated directory with { UID }')
             LocalSavePath = input('Please type the path to this game\'s saves: ')
             #Extra check to make sure the user isn't trying to quit the program
             if LocalSavePath.lower() not in ['q', 'quit', 'exit' ]:
@@ -110,23 +111,33 @@ def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
                     NewGameID = '1'
                 #We read our local save path into our Relative save path before making any substitutions
                 RelativeSavePath = LocalSavePath
+                ContinueFlag = True
+                if '{ UID }' in LocalSavePath:
+                    SavePathList = UIDFinder(LocalSavePath)
+                    if len(SavePathList) == 0:
+                        print('ERROR: No matching filepaths were found.')
+                        ContinueFlag = False
+                    elif len(SavePathList) > 1:
+                        print('ERROR: UID Tag should be used to distinguish PC specific filepaths')
+                        print('If you are trying to add a game with multiple save paths, it is recommended you add the individual saves as separate non-Steam games.')
+                        ContinueFlag = False
+                    else:
+                        LocalSavePath = SavePathList[0]
                 #We consider any path with the string drive_c in it to be a wine prefix
                 #Technically there is potential for false positives here, but it should be pretty low likelihood
-                if 'drive_c' in RelativeSavePath:
-                    #We consider everything prior to the drive_c string to be the path to our wine prefix
-                    WinePrefix = RelativeSavePath.split('drive_c')[0]
-                    #We substitute in { WINE PREFIX } so that we know where to look when we sync on new clients
-                    RelativeSavePath = RelativeSavePath.replace(WinePrefix, '{ WINE PREFIX }')
-                #We need to check whether the home path is somewhere in the remaining file path, this will only happen if we didn't already label this game as being installed to a wine prefix
-                elif HomeDir in RelativeSavePath:
-                    #We replace the string in our relative save path, and write the new entries to the database
-                    RelativeSavePath.replace(HomeDir, '{ HOME }')
-                elif HomeDir not in RelativeSavePath:
-                    print(HomeDir)
-                    print(RelativeSavePath)
-                SQLCreateEntry('NonSteamApps', {'GameID': NewGameID, 'Title': GameTitle, 'RelativeSavePath': RelativeSavePath, 'MostRecentSaveTime': 0})
-                SQLCreateEntry('NonSteamClientSaves', {'GameID': NewGameID, 'ClientID':ClientID, 'LocalSavePath':LocalSavePath, 'MostRecentSaveTime': 0 })
-    #If a GameID was passed in, we need to handle it differently, since that indicates we're syncing an existing known non-Steam game to a custom location
+                if ContinueFlag:
+                    if 'drive_c' in RelativeSavePath:
+                        #We consider everything prior to the drive_c string to be the path to our wine prefix
+                        WinePrefix = RelativeSavePath.split('drive_c')[0]
+                        #We substitute in { WINE PREFIX } so that we know where to look when we sync on new clients
+                        RelativeSavePath = RelativeSavePath.replace(WinePrefix, '{ WINE PREFIX }')
+                    #We need to check whether the home path is somewhere in the remaining file path, this will only happen if we didn't already label this game as being installed to a wine prefix
+                    elif HomeDir in RelativeSavePath:
+                        #We replace the string in our relative save path, and write the new entries to the database
+                        RelativeSavePath = RelativeSavePath.replace(HomeDir, '{ HOME }')
+                    SQLCreateEntry('NonSteamApps', {'GameID': NewGameID, 'Title': GameTitle, 'RelativeSavePath': RelativeSavePath, 'MostRecentSaveTime': 0})
+                    SQLCreateEntry('NonSteamClientSaves', {'GameID': NewGameID, 'ClientID':ClientID, 'LocalSavePath':LocalSavePath, 'MostRecentSaveTime': 0 })
+        #If a GameID was passed in, we need to handle it differently, since that indicates we're syncing an existing known non-Steam game to a custom location
     else:
         #Prompt user for the save game path
         LocalSavePath = input('Please type the path to this game\'s saves: ')
@@ -474,7 +485,6 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             found = True
                             #And we sync the non-Steam game
                             print('Syncing Game with GameID ' + ResponseGameID + '...')
-                            print(LocalNonSteamGames[i])
                             SyncNonSteamGame(ResponseGameID, LocalNonSteamGames[i]['LocalSavePath'], ServerSaveInformation['MostRecentSaveTime'], ClientDictionary['ClientID'], MaxSaves)
                             print('Finished Sync!')
                         else: 
@@ -815,7 +825,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                     if ResponseGameID.isnumeric():
                         #We Pull the game's SQL data, and let the user know that the only thing they can edit for this specific client is the local save path
                         GameSaveSQLEntry = SQLGetEntry('NonSteamClientSaves', { 'ClientID': ClientDictionary['ClientID'], 'GameID': ResponseGameID }, [])[0]
-                        print('Local Path: ' + GameSaveSQLEntry[0]['LocalSavePath'])
+                        print('Local Path: ' + GameSaveSQLEntry['LocalSavePath'])
                         print('The only editable entry for this selection is the Local Save Path.')
                         #Prompt the user for the new save path
                         NewPath = input('Please type the new save path for this game: ')

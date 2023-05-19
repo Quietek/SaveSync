@@ -151,10 +151,10 @@ If you want to run a sync comparing the backed up saves with what's on your comp
 
     $ python SteamSync.py --sync
 
-If you want to add a non-Steam game to the database or specify a custom save path for an existing non-Steam game, use the --add command line argument. Note that you should only need to use the first one, unless you have your games installed in an unexpected location (Wine games not installed via proton into compatdata or via wine into $HOME/Games, and game saves that are located outside the your home directory)
+If you want to add a non-Steam game to the database or specify a custom save path for an existing non-Steam game, use the --add command line argument. Note that you should only need to use the first one, unless you have your games installed in an unexpected location (This generally includes Wine games not installed via proton into compatdata or via wine into $HOME/Games, game saves that are located outside your home directory, and emulator saves located outside of the default path)
 
-    $ python SteamSync.py --add title={ INSERT TITLE HERE } path={ INSERT PATH TO SAVE FILE(s) HERE }
-    $ python SteamSync.py --add gameid={ INSERT GAMEID HERE } path= { INSERT PATH TO SAVE FILE(s) HERE }
+    $ python SteamSync.py --add 'title={ INSERT TITLE HERE }' 'path={ INSERT PATH TO SAVE FILE(s) HERE }'
+    $ python SteamSync.py --add 'gameid={ INSERT GAMEID HERE }' 'path={ INSERT PATH TO SAVE FILE(s) HERE }'
 
 If you want to get a list of games in the database, which includes all known GameIDs and AppID's, use the --list command line argument.
     
@@ -168,7 +168,7 @@ Additionally, if you have SteamSync on a removable drive and plan to remove it i
 ## F.A.Q.
 
 #### Why should I use this?
-Many games on Steam still do not support steam cloud saves. While this is mostly relevant to older games, there are still some big newer games that don't release with cloud save support, some notable games that don't support cloud saves in my own library include Dark Souls 2 and 3, the Quarry, Sleeping dogs, and a variety of retro games. This software is to make keeping your games that don't support steam cloud in sync with each other across multiple linux computers, without having to search online and manually find everything, you run one linux command and your entire Steam library (so long as information on PC Gaming Wiki is accurate) can be backed up, along with options to back up your ROMs and non-Steam game saves too!
+Many games on Steam still do not support steam cloud saves, meaning that there's no recourse if you end up losing access to that game's save data from an OS reinstall, a lost device, data corruption, or soft locking yourself in a game. While this is mostly relevant to older games, there are still some AA and AAA newer games that don't release with cloud save support, some notable games that don't support cloud saves in my own library include Dark Souls 2 and 3, the Quarry, Sleeping dogs, and a variety of retro games. This software is to make keeping your games that don't support steam cloud in sync with each other across multiple linux computers, without having to search online and manually find everything, you run one linux command and your entire Steam library (so long as information on PC Gaming Wiki is accurate) can be backed up, along with options to back up your ROMs and non-Steam game saves too!
 
 #### Do I need multiple PCs to get use out of this?
 Nope! SteamSync can work great as a simple save backup tool, and can absolutely be run on only one computer if you want to keep backups of your saves in case of an OS reinstall, a drive failure, or any number of other reasons. It also offers save rollback, which may come in handy if you find yourself soft locked in a game or with a corrupted save file on your system.
@@ -177,10 +177,11 @@ Nope! SteamSync can work great as a simple save backup tool, and can absolutely 
 The SteamSync folder is inteded to be placed on a removable drive such as a flash drive or an SD card. I personally have been keeping it on my Steam Deck's sd card. It can be placed and used anywhere though, so you can place it on a NAS or even just somewhere generic on your PC's SSD/HDD.
 
 #### Is this software compatible with Windows?
-No, and it probably won't be for a while, if ever. While I'd love to say I can just snap my fingers and make this compatible with windows, large portions of the code base are built around the assumption games are running in Proton and using that assumption to determine file paths. Also, the priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck would have you placing SteamSync on a drive with a filesystem format that windows doesn't support anyways.
+No, and it probably won't be for a while, if ever. While I'd love to say it would be easy to make this compatible with windows, large portions of the code base are built around the assumption that windows games are running in Proton, and using that assumption to determine various file paths. Also, my priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck in particular would have you placing SteamSync on a drive with a filesystem format that windows doesn't support.
 
 #### Is there a Decky plugin for this?
 Not currently, I have considered making one, but the last time I took a look, much of decky was still undocumented.  Also, until I feel better about the state of testing and bugs, I want this project to prioritize general linux compatibility rather than focusing on steam deck specific features. I may revisit this later though.
+
 
 #### Where are the backed up files located?
 - Backed up Steam saves will be located at ./Backups/[AppID]/[Timestamp]

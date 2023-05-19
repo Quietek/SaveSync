@@ -60,6 +60,24 @@ def GenerateSkippedGames():
     SQLCreateEntry('SteamApps',{'AppID':2348590, 'AlwaysSkipped':1, 'Title':'Proton 8.0'})
     return 0
 
+def GenerateAutoDetectedNonSteamGames():
+    #Emulator Auto Detection
+    SQLCreateEntry('NonSteamApps',{'GameID': 1, 'Title': 'Dolphin Gamecube Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/GC/', 'MostRecentSaveTime': 0 }) 
+    SQLCreateEntry('NonSteamApps',{'GameID': 2, 'Title': 'Dolphin Wii Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/Wii/title/00010000', 'MostRecentSaveTime': 0 }) 
+    SQLCreateEntry('NonSteamApps',{'GameID': 3, 'Title': 'Yuzu Saves', 'RelativeSavePath':'{ HOME }.local/share/yuzu/nand/user/save/0000000000000000/{ UID }', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 4, 'Title': 'Yuzu Keys', 'RelativeSavePath': '{ HOME }.local/share/yuzu/keys/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 5, 'Title': 'Ryujinx Saves', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/user/save/0000000000000001', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 6, 'Title': 'Ryujinx Keys', 'RelativeSavePath': '{ HOME }.config/Ryujinx/system/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 7, 'Title': 'Ryujinx Firmware', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/system/contents/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 8, 'Title': 'Duckstation Memory Cards', 'RelativeSavePath': '{ HOME }.local/share/duckstation/memcards/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 9, 'Title': 'Duckstation BIOS', 'RelativeSavePath': '{ HOME }.local/share/duckstation/bios/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 10, 'Title': 'PCSX2 Memory Cards', 'RelativeSavePath': '{ HOME }.config/PCSX2/memcards/', 'MostRecentSaveTime': 0 })
+    SQLCreateEntry('NonSteamApps',{'GameID': 11, 'Title': 'PCSX2 BIOS', 'RelativeSavePath':'{ HOME }.config/PCSX2/bios/', 'MostRecentSaveTime': 0 })
+    #You will need to install firmware sperately? Maybe there's a way to sync the firmware too?
+    SQLCreateEntry('NonSteamApps',{'GameID': 12, 'Title': 'RPCS3 Saves', 'RelativeSavePath':'{ HOME }/.config/rpcs3/dev_hdd0/home/00000001/savedata', 'MostRecentSaveTime': 0})
+
+    return 0
+
 def GenerateGlobalVars():
     response = input("Please specify the maximum number of saves you wish to keep backed up (default: 10): ")
     MaxSaves = 0
@@ -184,6 +202,7 @@ def InitializeDatabase():
             Title TEXT,
             RelativeSavePath TEXT,
             MostRecentSaveTime REAL);""")
+            GenerateAutoDetectedNonSteamGames()
             print("NonSteamApps table successfully created!")
         if ('NonSteamClientSaves',) not in Tables:
             print("Creating NonSteamClientSaves table...")

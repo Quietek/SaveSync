@@ -133,6 +133,14 @@ if (__name__ == "__main__"):
                 NewGameID = 1
             #We use a seperate value to hold the relative save path
             RelativeSavePath = NewPath
+            if '{ UID }' in NewPath:
+                PathList = UIDFinder(NewPath)
+                if len(PathList) > 1:
+                    print("ERROR: The non-Steam UID tag was used on a folder with multiple entries. The UID tag is intended to be used for PC-specific filepaths.")
+                elif len(PathList) == 0:
+                    print('ERROR: No matching Paths Found.')
+                else:
+                    NewPath = PathList[0]
             #if we see a folder named drive_c we assume we're inside of a wine prefix
             if 'drive_c' in RelativeSavePath:
                 #We split on drive_c, in order to get the path both before and after the wine prefix's root folder
@@ -140,7 +148,7 @@ if (__name__ == "__main__"):
                 #We substitute in our { WINE PREFIX } string in the relative save path, so we can reference it later if we need to
                 RelativeSavePath = RelativeSavePath.replace(WinePrefix, '{ WINE PREFIX }')
             #We replace any instances of $HOME with { HOME } in order to signal that the save is located somewhere within the home folder that isn't a wine prefix
-            elif os.path.expanduser('~') in RelativeSavePath:
+            elif ClientDictionary['HomeDir'] in RelativeSavePath:
                 RelativeSavePath = RelativeSavePath.replace(os.path.expanduser('~'), '{ HOME }')
             #SQL entry creation for the new game save we just added
             SQLCreateEntry('NonSteamApps', {'GameID': NewGameID, 'Title': GameTitle, 'RelativeSavePath': RelativeSavePath, 'MostRecentSaveTime': 0})

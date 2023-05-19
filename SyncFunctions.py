@@ -51,7 +51,7 @@ def CopySaveFromServer(SaveDict):
                 #Copy our folder to the destination
                 shutil.copytree(Source,Destination, dirs_exist_ok=True)
                 print("Save Successfully Copied!")
-            #If the source is a file as opposed to a folder
+            #If the source is a file as opposed to a folderprint
             elif os.path.isfile(Source):
                 #Terminal output for debugging
                 print("Source: " + Source)
@@ -317,7 +317,7 @@ def VerifyLocalData(ReferencePaths):
     return ReturnList
 
 #Function to find matching file or folder names when they need to be substituted for a unique UID
-def UIDFinder(Path,Exclusions):
+def UIDFinder(Path,Exclusions=[]):
     #Initialize Final Return Value List
     ReturnPaths = []
     #For each path in the paths list
@@ -1297,9 +1297,21 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     #We get our SQL data for all the locally known non-Steam games
     if len(LocalNonSteamSQLData) > 0:
         for LocalGame in LocalNonSteamSQLData:
-            print(LocalGame)
+            UIDFolderFlag = False
             #Sync each game, and add it to our found games list so we know we don't have to search for it later
-            SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves)
+            RelativePath = SQLGetEntry('NonSteamApps', { 'GameID':LocalGame['GameID'] })[0]['RelativeSavePath']
+            if '{ UID }' in RelativePath:
+                if '{ HOME }' in RelativePath:
+                    RelativePath = RelativePath.replace('{ HOME }', HomeDir)
+                if '{ WINE PREFIX }' in RelativePath:
+                    Middleath = RelativePath.replace('{ WINE PREFIX }','').replace('{ UID }','')
+                    TempSplit = LocalGame['LocalSavePath'].split(MiddlePath)
+                    WinePrefix = LocalGame['LocalSavePath'][0]
+                    RelativePath = RelativePath.replace('{ WINE PREFIX }',WinePrefix)
+                print(RelativePath)
+                if '{ UID }' == RelativePath.split('/')[-1] and RelativePath.replace('{ UID }','').replace('//','/') in LocalGame['LocalSavePath']:
+                    UIDFolderFlag = True
+            SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves, UIDFolderFlag)
             FoundGames.append(LocalGame['GameID'])
     #variable initialization to create a list of games we need to search for
     SearchableGames = []
@@ -1342,16 +1354,19 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 if os.path.isdir(FullPath) or os.path.isfile(FullPath):
                     SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
             if '{ UID }' in game['RelativeSavePath']:
+                InsideFolderFlag = False
                 MatchingPaths = UIDFinder(FullPath)
                 if len(MatchingPaths) > 1:
                     print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
                 elif len(MatchingPaths) == 1:
                     FullPath = MatchingPaths[0]
-                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+                    if '( UID }' == game['RelativeSavePath'].split('/')[-1]:
+                        InsideFolderFlag = True
+                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
-def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, OverwriteFlag=False):
+def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, UIDFolderFlag=False, OverwriteFlag=False):
     LocalSaveEntry = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID, 'GameID':GameID})
     ContinueFlag = False
     #We get the time modified of our local save
@@ -1361,10 +1376,9 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
     #data sanitation check, some file path splits may end up resulting in an empty value as the last value, so we pull the value before if this happens
     if Filename == '':
         Filename = LocalSavePath.split('/')[-2]
- 
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
     if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
-        if len(LocalSaveEntry) == 0:
+        if len(LocalSaveEntry) == 0 and ServerSaveTime != 0:
             print('Unsynced Client has more recent save than server!')
             print('1. Set new client\'s save as the most recent on the server')
             print('2. Overwrite this client\'s save with the most recent save on the server')
@@ -1377,26 +1391,38 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 ContinueFlag = True
             elif Selection == '2':
                 SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, True)
-        elif len(LocalSaveEntry) > 0:
+        elif len(LocalSaveEntry) > 0 or ServerSaveTime == 0:
             ContinueFlag = True
         if ContinueFlag:
             #We get the expected backup directory, and output some information to the end user
             BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(LocalTimeModified).strftime('%Y-%m-%d_%H%M%S')
+            BackupDirNoTimestamp = "./NonSteamSaves" + "/" + str(GameID) + "/"
+            if not os.path.isdir(BackupDirectory):
+                os.makedirs(BackupDirectory,exist_ok=True)
             print('More recent save on client than on server!')
             print('Copying Save to server...')
             print('Source: ' + LocalSavePath)
             print('Destination: ' + BackupDirectory)
             #We check whether we're copying a folder or a file, and copy into the backup directory accordingly
-            if os.path.isdir(LocalSavePath):
+            if os.path.isdir(LocalSavePath) and not UIDFolderFlag:
                 shutil.copytree(LocalSavePath, BackupDirectory + '/' + Filename, dirs_exist_ok=True)
             elif os.path.isfile(LocalSavePath):
-                shutil.copy(LocalSavePath, BackupDirectory, exist_ok=True)
-            SortedSaves = sorted(os.listdir(BackupDirectory))
+                shutil.copy(LocalSavePath, BackupDirectory)
+            elif UIDFolderFlag:
+                shutil.copytree(LocalSavePath,BackupDirectory, dirs_exist_ok=True)
+                '''for file in os.listdir(LocalSavePath):
+                    if os.path.isdir(LocalSavePath + '/' + file):
+                        shutil.copytree(LocalSavePath + '/' + file, BackupDirectory, dirs_exist_ok=True)
+                    elif os.path.isfile(LocalSavePath + '/' + file):
+                        if os.path.isfile(BackupDirectory + '/' + file):
+                            os.remove(BackupDirectory + '/' + file)
+                        shutil.copy(LocalSavePath + '/' + file, BackupDirectory)'''
+            SortedSaves = sorted(os.listdir(BackupDirNoTimestamp))
             if len(SortedSaves) > MaxSaves:
                 print("Reached Maximum number of saves...")
                 print("Removing oldest save from backups folder...")
-                print("Deleting Directory: " + BackupDirectoryDirectory + SortedSaves[0])
-                shutil.rmtree(BackupDirectory + SortedSaves[0])
+                print("Deleting Directory: " + BackupDirNoTimestamp + SortedSaves[0])
+                shutil.rmtree()
                 print("Directory Successfully Deleted!")
             #SQL database entry creation and updates for our new save save timestamp
             SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
@@ -1422,11 +1448,20 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
             SQLCreateEntry('NonSteamClientSaves',{ 'GameID': GameID, 'ClientID':ClientID, 'MostRecentSaveTime':LocalTimeModified, 'LocalSavePath':LocalSavePath })       
         #We check whether we're copying a folder or a file and copy accordingly
         #NOTE this should overwrite the local data in both cases
-        if os.path.isdir(BackupDirectory + '/' + Filename):
+        if os.path.isdir(BackupDirectory + '/' + Filename) and not UIDFolderFlag:
             shutil.copytree(BackupDirectory + '/' + Filename,LocalSavePath, dirs_exist_ok=True)
-        elif os.path.isfile(BackupDirectory + '/' + Filename):
+        elif os.path.isfile(BackupDirectory + '/' + Filename) and not UIDFolderFlag:
             if os.path.isfile(LocalSavePath):
                 os.remove(LocalSavePath)
-            shutil.copy(BackupDirectory + '/' + Filename, LocalSavePath, exist_ok=True)
+            shutil.copy(BackupDirectory + '/' + Filename, LocalSavePath)
+        elif UIDFolderFlag:
+            shutil.copytree(LocalSavePath,BackupDirectory, dirs_exist_ok=True)
+            ''' for file in os.listdir(BackupDirectory):
+                if os.path.isdir(BackupDirectory + '/' + file):
+                    shutil.copytree(BackupDirectory + '/' + file, BackupDirectory, dirs_exist_ok=True)
+                elif os.path.isfile(BackupDirectory + '/' + file):
+                    if os.path.isfile(LocalSavePath + '/' + file):
+                        os.remove(LocalSavePath + '/' + file)
+                    shutil.copy(LocalSavePath + '/' + file, BackupDirectory)      '''     
         print('Save successfully copied!')
     return 0
