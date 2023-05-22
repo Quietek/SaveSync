@@ -119,10 +119,13 @@ def CopySaveToServer(SaveDict, MaxSaves):
         print("Reached Maximum number of saves...")
         print("Removing oldest save from backups folder...")
         print("Deleting Directory: " + SaveDirectory + SortedSaves[0])
-        shutil.rmtree(SaveDirectory + SortedSaves[0])
+        OldestTimestamp = SQLGetMinMax('SaveTimestamps', 'Timestamp', {'AppID': SaveDict['AppID'] },True)[0]['MinVal']
+        SQLDeleteEntry('SaveTimestamps', {'AppID': SaveDict['AppID'], 'Timestamp':OldestTimestamp })
+        if os.path.isdir(SaveDirectory + '/' + SortedSaves[0]):
+            shutil.rmtree(SaveDirectory + SortedSaves[0])
         print("Directory Successfully Deleted!")
     #If our suffixes are a length of 0 or 1, we know that we only need to worry about 1 file/folder
-    if len(SaveDict['Suffixes']) == 0 or len(SaveDict['Suffixes']) == 1:
+    if len(SaveDict['Suffixes']) == 0 or (len(SaveDict['Suffixes']) == 1 and SaveDict['Suffixes'] == ['']):
         #Generate the list of preceding directories using our prefix
         SplitPath = SaveDict['Prefix'].split('/')
         #Initiate filename based on the final non-blank value of our previous split
@@ -154,7 +157,7 @@ def CopySaveToServer(SaveDict, MaxSaves):
             #We get our relative suffix, since the prefix could be the root directory, and we need to make the structure compatible across clients
             RelativeSuffix= GetRelativePath(SaveDict,'/' + suffix)
             #We split our suffix to get our filename
-            TempSplit = suffix.split('/')
+            TempSplit = suffix.replace('////','/').replace('///','/').replace('//','/').split('/')
             #Pull our filename from the last non blank value of our suffix
             if TempSplit[-1] != '':
                 FileName = TempSplit[-1]
@@ -180,7 +183,7 @@ def CopySaveToServer(SaveDict, MaxSaves):
                 shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
                 print("Save Successfully Copied!")
             #Otherwise, we know to copy the file into our newly created folders
-            else:
+            elif '{ UID }' not in SaveDict['Prefix']:
                 print("Souce: " + SaveDict['Prefix'] + '/' + suffix)
                 print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
                 #Copy our file to the backup directory
@@ -202,46 +205,61 @@ def GetPrefixAndSuffixes(PathList):
     found = False
     Prefix = ''
     Suffixes = []
-    #a while loop to loop through our list of directories until we find the differences
-    while (i < MinLength) and (not found):
-        #We use our initial path as our baseline to compare to
-        ComparisonPath = PathList[0].split('/')
-        #We find our total number of paths from the length of our input list
-        NumPaths = len(PathList)
-        #We iterate through all our paths after our baseline path
-        for j in range(1,NumPaths):
-            #Create a temporary variable to hold a list of all our directories
-            TempSplit = PathList[j].split('/')
-            #If the directory we're looking at is the same as our baseline
-            if TempSplit[i] == ComparisonPath[i] and not found:
-                #and we know this is the last path in our path list we have to examine
-                if j == NumPaths-1 and not found:
-                    #Add the current directory to our prefix
-                    Prefix += TempSplit[i] + '/'
-            #If we know this isn't the first value we're examining and we haven't found it
-            elif j != 1 and not found:
-                #Our suffix is the end of the current path we're examining
-                index = len(Prefix)
-                Suffixes.append(PathList[j][index:])
-                found = True
-                #Make sure we append the paths we already checked to our suffixes
-                for k in range(1,j+1):
-                    Suffixes.append(PathList[k][index:])
-            #If this is the first comparison path in our path list
-            elif not found:
-                #we found our differentiating index and this is the first value in our path list, so we don't need to add any already checked values to our suffixes
-                index = len(Prefix)
-                Suffixes.append(PathList[j][index:])
-                found = True
-            #Add any paths after our first differentiator is found to our suffixes
+    if len(PathList) != 2 or ('{ UID }' not in PathList[0] and '{ UID }' not in PathList[1]):
+        #a while loop to loop through our list of directories until we find the differences
+        while (i < MinLength) and (not found):
+            #We use our initial path as our baseline to compare to
+            ComparisonPath = PathList[0].split('/')
+            #We find our total number of paths from the length of our input list
+            NumPaths = len(PathList)
+            #We iterate through all our paths after our baseline path
+            for j in range(1,NumPaths):
+                #Create a temporary variable to hold a list of all our directories
+                TempSplit = PathList[j].split('/')
+                #If the directory we're looking at is the same as our baseline
+                if TempSplit[i] == ComparisonPath[i] and not found:
+                    #and we know this is the last path in our path list we have to examine
+                    if j == NumPaths-1 and not found:
+                        #Add the current directory to our prefix
+                        Prefix += TempSplit[i] + '/'
+                #If we know this isn't the first value we're examining and we haven't found it
+                elif j != 1 and not found:
+                    #Our suffix is the end of the current path we're examining
+                    index = len(Prefix)
+                    Suffixes.append(PathList[j][index:])
+                    found = True
+                    #Make sure we append the paths we already checked to our suffixes
+                    for k in range(1,j+1):
+                        Suffixes.append(PathList[k][index:])
+                #If this is the first comparison path in our path list
+                elif not found:
+                    #we found our differentiating index and this is the first value in our path list, so we don't need to add any already checked values to our suffixes
+                    index = len(Prefix)
+                    Suffixes.append(PathList[j][index:])
+                    found = True
+                #Add any paths after our first differentiator is found to our suffixes
+                else:
+                    Suffixes.append(PathList[j][index:])
+            #If we found our differences, we need to append our baseline path to our suffixes
+            if found:
+                Suffixes.append(PathList[0][index:])
+            #Otherwise, we know we need to keep iterating through our list of directories
             else:
-                Suffixes.append(PathList[j][index:])
-        #If we found our differences, we need to append our baseline path to our suffixes
-        if found:
-            Suffixes.append(PathList[0][index:])
-        #Otherwise, we know we need to keep iterating through our list of directories
-        else:
-            i += 1
+                i += 1
+    else:
+        FullPath = ''
+        PostUIDPath = ''
+        for path in PathList:
+            if '{ UID }' in path:
+                PostUIDPath = path.replace('{ UID }','')
+            else:
+                FullPath = path
+        TempVal = FullPath.replace(PostUIDPath,'')
+        
+        Prefix = TempVal.replace('{ UID }','')
+        UID = FullPath.replace(Prefix,'').replace(PostUIDPath,'')
+        Suffixes.append(UID + '/' + PostUIDPath)
+        
     return (Prefix,Suffixes)
 
 #Function to get the time modified of a file
@@ -311,6 +329,8 @@ def VerifyLocalData(ReferencePaths):
         elif SaveType in ['Unfound','Directory'] and os.path.isdir(path):
             #We append our path to the return list with a timestamp and a found flag
             ReturnList.append({'AbsolutePath': path, 'SaveType':'Directory', 'Found':True, 'TimeModified': GetTimeModified(path)})
+        elif '{ UID }' in path:
+            ReturnList.append({'AbsolutePath': path, 'SaveType':'UID', 'Found':True, 'TimeModified': 0 })
         #otherwise, append our path to the return list and mark it as unfound
         else:
             ReturnList.append({'AbsolutePath': path, 'SaveType':'Unfound', 'Found':False})
@@ -518,7 +538,8 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
     #NOTE other save file extensions can be specified here, these are specifically for saves that are located in the same location as the ROM folders
     #These are typically only necessary for cartridge based games
     #If you have an emulator saving in a different location, add it as a non-Steam game, NOT as a file extension here
-    SaveExtensions = ['.sav']
+    SaveExtensions = ['sav', 'eep', 'fla', 'srm', 'ss']
+    ROMExtensions = ['z64', 'gba', '3ds', 'rvz', 'iso', 'nsp', 'xci', 'cue', 'bin', 'sfc', 'nes']
     TempSplit = ServerPath.split('/')
     #We check wheter we have to flag the current folder as a subfolder
     #We use the subfolder indication to know which folders to sync from our root rom folder and which we're syncing to a different location
@@ -546,10 +567,15 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
     for localfile in LocalFiles:
         #We initialize a flag to indicate when we're dealing with a save file instead of a ROM file
         SaveFlag = False
+        i = 0
+        TempSplit = localfile.split('.')
         #We iterate through our list of save file extensions, and if the file has one, we flag that we're dealing with a save file
-        for extension in SaveExtensions:
-            if extension in localfile:
+        while not SaveFlag and i < len(SaveExtensions) and len(TempSplit) > 1 and TempSplit[-1].lower() not in ROMExtensions:
+            extension = SaveExtensions[i]
+            if extension in TempSplit[-1].lower() and len(TempSplit) > 1:
                 SaveFlag = True
+            else:
+                i += 1
         #If the file we're looking at is actually a directory and we aren't specifically excluding it to sync to a different location, we recursively call our SyncRomFolder function to sync the contents of that folder as well
         if os.path.isdir(LocalPath + '/' + localfile) and localfile not in ExcludedFolders:
             SyncRomFolder(LocalPath +'/' + localfile, ServerPath + '/' + localfile, ExcludedFolders, MaxSaves)
@@ -571,6 +597,12 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
             ServerTimestamp = SQLGetMinMax('ROMSaves','Timestamp',{'Filename':localfile, 'SubFolder':SubFolder})[0]['MaxVal']
             #We get the file's extension
             Extension = localfile.split('.')[-1]
+            if not ServerTimestamp:
+                ServerTimestamp = GetTimeModified(ServerPath + '/' + localfile)
+                SQLCreateEntry('ROMSaves',{ 'Filename':localfile, 'SubFolder': SubFolder, 'Timestamp': ServerTimestamp })
+                SQLCreateEntry('ROMSaveTimestamps', { 'Filename':localfile, 'Timestamp': ServerTimestamp })
+                os.makedirs("./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(ServerTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/',exist_ok=True)
+                shutil.copy(ServerPath + '/' + localfile, "./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(ServerTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
             #We overwrite the local save with the server save if the server save is more recent
             if ServerTimestamp > LocalTimestamp:
                 print("More Recent ROM Save found on server than on client!")
@@ -593,19 +625,24 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
                 print("Destination: " + ServerPath + '/' + localfile)
                 #SQL entry updates and creation to keep track of our save timestamps
                 SQLUpdateEntry('ROMSaves',{'Timestamp':LocalTimestamp},{'Filename':localfile,'SubFolder':SubFolder})
-                SQLCreateEntry('ROMSaveTimestamps',{'Filename': localfile, 'Timestamp': LocalTimestamp})
+                SQLCreateEntry('ROMSaveTimestamps',{'FileName': localfile, 'Timestamp': LocalTimestamp})
                 #We make the backup directory and copy the save file into it since we're overwriting our server save
-                os.makedirs("./ROMSaves/" + localfile.replace('.' + Extension,'') + '/' + SubFolder + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
+                os.makedirs("./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'), exist_ok=True)
+                os.remove(ServerPath + '/' + localfile)
                 shutil.copy(LocalPath + '/' + localfile, ServerPath + '/' + localfile)
-                shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + SubFolder + '/' + localfile.replace('\.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
+                shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" +  '/' + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
                 #We sort the list of save timestamps we have backed up currently
-                SortedSaveList = sorted(os.listdir("./ROMSaves/" + Subfolder + localfile.replace('\.' + Extension,'')))
+                SortedSaveList = sorted(os.listdir("./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'')))
+                SaveTimestampsList = SQLGetEntry('ROMSaveTimestamps', {'FileName': localfile })
+                if len(SaveTimestampsList) > MaxSaves:
+                    print('Maximum number of saves reached...')
+                    OldestTimestamp = SQLGetMinMax('ROMSaveTimestamps','Timestamp', { 'FileName': localfile }, True)[0]['MinVal']
+                    print('Deleting Oldest ROM Save Directory with timestamp: ' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M$S'))
+                    SQLDeleteEntry('ROMSaveTimestamps',{'Timestamp': OldestTimestamp, 'FileName': localfile })
+                    if os.path.isdir('./ROMSaves/' + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S')):
+                        shutil.rmtree('./ROMSaves/' + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S'))
+                    print('ROM Save successfully deleted!')
                 #We delete the oldest save if we've reached our maximum number of backups
-                if len(SortedSaveList) > MaxSaves:
-                    print("Reached maximum number of backed up saves...")
-                    print("Deleting oldest ROM Save version...")
-                    print("Deleteing Directory: " + "./ROMSaves/" + SubFolder + localfile.replace('\.' + Extension,'') + SortedSaveList[0])
-                    shutil.rmtree("./ROMSaves/" + SubFolder + localfile.replace('\.' + Extension,'') + SortedSaveList[0])
                 print("ROM Save successfully copied!")
         #If the file is a save and doesn't exist on the server
         elif SaveFlag and localfile not in ServerFiles and localfile not in ExcludedFolders:
@@ -615,7 +652,7 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
             #We get the time modified of our local file and make new SQL entries for our new save file
             LocalTimestamp = GetTimeModified(LocalPath + '/' + localfile)
             SQLCreateEntry('ROMSaves',{'FileName':localfile, 'SubFolder':SubFolder,'Timestamp':LocalTimestamp})
-            SQLCreateEntry('ROMSaveTimestamps',{'Filename':localfile,'Timestamp':LocalTimestamp})
+            SQLCreateEntry('ROMSaveTimestamps',{'FileName':localfile,'Timestamp':LocalTimestamp})
             #User information output and copying the new save onto our server
             print("Copying local ROM Save to server...")
             print("Source: " + LocalPath + '/' + localfile)
@@ -640,6 +677,35 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
             print("File successfully copied!")
     return 0
  
+
+def CheckForUpdatedROMSaves(MaxSaves):
+    ROMSaves = SQLGetEntry('ROMSaves', {}, [])
+    for SaveFile in ROMSaves:
+        TempSplit = SaveFile['FileName'].split('.')
+        Extension = TempSplit[-1]
+        NoExt = TempSplit[0]
+        ServerTimestamp = SQLGetMinMax('ROMSaveTimestamps','Timestamp',{'FileName':SaveFile['FileName']})[0]['MaxVal']
+        TrueTimestamp = GetTimeModified('./ROMs/' + SaveFile['SubFolder'] + '/' + SaveFile['FileName'])
+        if TrueTimestamp > ServerTimestamp:
+            print('SteamSync local ROM Save is newer than most recent backup...')
+            print('Backing up ROM Save: ' + SaveFile['FileName'])
+            os.makedirs('./ROMSaves/' + SaveFile['SubFolder'] + '/' + NoExt + '/' + datetime.datetime.fromtimestamp(TrueTimestamp).strftime('%Y-%m-%d_%H%M%S'), exist_ok=True)
+            shutil.copy('./ROMs/' + SaveFile['SubFolder'] + '/' + SaveFile['FileName'],  './ROMSaves/' + SaveFile['SubFolder'] + '/' + NoExt + '/' + datetime.datetime.fromtimestamp(TrueTimestamp).strftime('%Y-%m-%d_%H%M%S') +'/')
+            SQLUpdateEntry('ROMSaves', { 'Timestamp': TrueTimestamp }, { 'SubFolder': SaveFile['SubFolder'], 'FileName': SaveFile['FileName'] })
+            SQLCreateEntry('ROMSaveTimestamps', {'FileName': SaveFile['FileName'], 'Timestamp':TrueTimestamp })
+            SaveTimestampsList = SQLGetEntry('ROMSaveTimestamps', {'FileName': SaveFile['FileName'] })
+            if len(SaveTimestampsList) > MaxSaves:
+                print('Maximum number of saves reached...')
+                OldestTimestamp = SQLGetMinMax('ROMSaveTimestamps','Timestamp', { 'FileName': SaveFile['FileName'] }, True)[0]['MinVal']
+                print('Deleting Oldest ROM Save Directory with timestamp: ' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S'))
+                SQLDeleteEntry('ROMSaveTimestamps',{'Timestamp': OldestTimestamp, 'FileName': SaveFile['FileName'] })
+                if os.path.isdir('./ROMSaves/' + SaveFile['SubFolder'] + '/' + NoExt + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S')):
+                    shutil.rmtree('./ROMSaves/' + SaveFile['SubFolder'] + '/' + NoExt + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S'))
+                print('ROM Save successfully deleted!')
+    return 0                                       
+        
+
+
 #Function to convert PCGW data into a usable filepath
 def GetFilepaths(ApplicationDict, UnprocessedPath):
     Exclusions = []
@@ -697,7 +763,21 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
         path = path.replace('\\','/').replace('//','/').replace('}}','')
         #Call our UID finder on our current path if we have any UIDs we need to find before we add it to our return list
         if '{ UID }' in path:
-            ReturnPaths.extend(UIDFinder(path,Exclusions))
+            FullPaths = UIDFinder(path,Exclusions)
+            if len(FullPaths) == 1:
+                ReplacementPath = ''
+                TempSplit = path.split('{ UID }')
+                for temppath in TempSplit:
+                    if temppath != TempSplit[-1]:
+                        ReplacementPath = ReplacementPath + '/' + temppath
+                ReplacementPath = ReplacementPath.replace('////','/').replace('///','/').replace('//','/')
+                FullPaths[0] = FullPaths[0].replace('////','/').replace('///','/').replace('//','/')
+                Suffix = '{ UID }' + FullPaths[0].replace(ReplacementPath,'')
+                ReturnPaths.extend(FullPaths)
+                ReturnPaths.append(Suffix)
+            else:
+                ReturnPaths.extend(FullPaths)
+            
         #Otherwise we just append our current path to our return list
         else:
             ReturnPaths.append(path)
@@ -801,7 +881,7 @@ def GetPCGWData(ApplicationDict):
                         if LinuxSave:
                             RawSaveDataDict['LinuxSave'] = LinuxSave.group()
     #We make sure we found at least one usable save from any of the platforms before continuing
-    if (LinuxSave or SteamSave or WindowsSave):
+    if (LinuxSave or SteamSave or WindowsSave): 
         #We call our parse save data function to take the raw text from PCGW and turn it into a usable file path
         SaveDataList = ParseSaveData(ApplicationDict, RawSaveDataDict)
         #We call our verifylocaldata function with our new save paths, so we can find which files exist that we potentially want to backup
@@ -815,7 +895,8 @@ def GetPCGWData(ApplicationDict):
             #We only care about the entries that we found a matching local file or folder for
             if entry['Found']:
                 #We flag that there is at least one found save
-                ReturnDict['Found'] = True
+                if '{ UID }' not in entry['AbsolutePath']:
+                    ReturnDict['Found'] = True
                 #We want to treat the overall time modified of the save as the most recent time modified of any of our found saves
                 if entry['TimeModified'] > ReturnDict['TimeModified']:
                     ReturnDict['TimeModified'] = entry['TimeModified']
@@ -929,9 +1010,38 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 #Pull the SQL on the client into our more easily interprateable prefix and suffixes
                 PathPrefix = SQLGetEntry('ClientPrefixes',{'ClientID':ClientID, 'AppID':AppID}, [])[0]['Prefix']
                 SuffixSQLData = SQLGetEntry('ClientSuffixes',{'ClientID':ClientID, 'AppID':AppID}, [])
+                ServerSuffixes = SQLGetEntry('ClientSuffixes',{'AppID': AppID })
+                KnownSuffixRoots = []
                 if len(SuffixSQLData) > 0:
                     for row in SuffixSQLData:
                         Suffixes.append(row['Suffix'])
+                for TempSuffix in ServerSuffixes:
+                    if TempSuffix['Suffix'] not in Suffixes:
+                        Suffixes.append(TempSuffix['Suffix'])
+                        SQLCreateEntry('ClientSuffixes', {'ClientID': ClientID, 'AppID': AppID, 'Suffix': TempSuffix['Suffix'] })
+                KnownSuffixIDs = []
+                PostSuffixFolders = []
+                for suffix in Suffixes:
+                    TempSplit = suffix.split('/')
+                    SuffixID = ''
+                    if len(TempSplit) > 1:
+                        if TempSplit[0] != '':
+                            SuffixID = TempSplit[0]
+                        else:
+                            SuffixID = TempSplit[1]
+                    KnownSuffixIDs.append(SuffixID)
+                    postsuffixid = suffix.replace(SuffixID,'')
+                    if postsuffixid not in PostSuffixFolders:
+                        PostSuffixFolders.append(suffix.replace(SuffixID,''))
+                if os.path.isdir(PathPrefix):
+                    PotentialSuffixes = os.listdir(PathPrefix)
+                    for newsuffixid in PotentialSuffixes:
+                        if newsuffixid not in KnownSuffixIDs:
+                            for subfolders in PostSuffixFolders:
+                                newsuffix = newsuffixid + '/' + subfolders
+                                if os.path.isfile(PathPrefix + '/' + newsuffix) or os.path.isdir(PathPrefix + '/' + newsuffix):
+                                    SQLCreateEntry('ClientSuffixes',{'ClientID':ClientID, 'AppID': AppID, 'Suffix': newsuffix})
+                                    Suffixes.append(newsuffix)
                 #We need to get our local save timestamp to determine what to do with this client
                 LocalSaveTime = 0
                 #If we have more than one path we need to check
@@ -1158,6 +1268,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
         elif len(AppSQLData) == 0 or NeedPCGWFlag:
             #We need to pull information from PC Gaming Wiki since we have no information to reference from the SQL database
             PCGWDict = GetPCGWData(GameDataDict)
+            ContinueFlag = False
             #Pull the title from our vdf data since it's less intensive than parsing the PCGW Text or making a new request
             PCGWDict['Title'] = AppVDFData['AppState']['name']
             #We only proceed if the PCGW entry exists and we either are including steam cloud or it's not a steam cloud game
@@ -1185,20 +1296,29 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 if len(PCGWDict['AbsoluteSavePaths']) > 1:
                     #We split our prefix and suffixes from our absolute paths
                     (Prefix, Suffixes) = GetPrefixAndSuffixes(PCGWDict['AbsoluteSavePaths'])
+                    Prefix = Prefix.replace('{ UID }','')
+                    for i in range(0,len(Suffixes)):
+                        Suffixes[i] = Suffixes[i].replace('{ UID }','')
                     #Create our prefix and suffix entries for our newly found data
-                    SQLCreateEntry('ClientPrefixes',{'AppID':AppID, 'ClientID':ClientID, 'Prefix':Prefix})
-                    for suffix in Suffixes:
-                        SQLCreateEntry('ClientSuffixes',{'AppID':AppID, 'ClientID':ClientID, 'Suffix':suffix})
+                    if os.path.isdir(Prefix):
+                        SQLCreateEntry('ClientPrefixes',{'AppID':AppID, 'ClientID':ClientID, 'Prefix':Prefix})
+                        for suffix in Suffixes:
+                            if os.path.isfile(Prefix + '/' + suffix) or os.path.isdir(Prefix + '/' + suffix):
+                                ContinueFlag = True
+                                SQLCreateEntry('ClientSuffixes',{'AppID':AppID, 'ClientID':ClientID, 'Suffix':suffix})
+                            else:
+                                Suffixes.remove(suffix)
                 #if we are only syncing a single file or directory path, we don't have to iterate through our suffix list, just create an empty suffixes variable
-                else:
+                elif len(PCGWDict['AbsoluteSavePaths']) == 1 and '{ UID }' not in PCGWDict['AbsoluteSavePaths'][0]:
                     SQLCreateEntry('ClientPrefixes',{'AppID':AppID,'ClientID':ClientID,'Prefix':PCGWDict['AbsoluteSavePaths'][0].replace('\'','\'\'')})
                     Prefix = PCGWDict['AbsoluteSavePaths'][0]
+                    ContinueFlag = True
                     Suffixes = []
                     SQLCreateEntry('ClientSuffixes',{'AppID':AppID,'ClientID':ClientID,'Suffix':''})
                 #Compile our data dictionary that should have everything we need to copy our save
                 SaveDict = {}
                 SaveDict['Timestamp'] = PCGWDict['TimeModified']
-                SaveDict['Prefix'] = Prefix
+                SaveDict['Prefix'] = Prefix.replace('{ UID }','')
                 SaveDict['Suffixes'] = Suffixes
                 SaveDict['AppID'] = AppID
                 SaveDict['ProtonPath'] = PCGWDict['ProtonPath']
@@ -1206,7 +1326,8 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 SaveDict['Home'] = HomeDir
                 SaveDict['InstallDir'] = InstallDir
                 #Copy our save to the server now that we've created our SQL entries and compiled our data dictionary
-                CopySaveToServer(SaveDict, MaxSaves)
+                if ContinueFlag:
+                    CopySaveToServer(SaveDict, MaxSaves)
             #If this is a steam cloud game and we aren't including steam cloud games to sync
             elif PCGWDict['SteamCloud'] and not IncludeSteamCloud and not NeedPCGWFlag:
                 #Create a SQL entry to reference that this game is always skipped by any syncing clients
@@ -1222,6 +1343,8 @@ def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths, MaxSaves, Silen
     LibraryVDFDict = vdf.load(open(PathToVDF))
     #NOTE for now we always assume we're running on linux, as no windows functionality is present
     SystemPlatform = 'Linux'
+    if os.path.isdir('./ROMSaves'):
+        CheckForUpdatedROMSaves(MaxSaves)
     #for each library that we have mapped in our steam library file
     for Library in LibraryVDFDict['libraryfolders']:
         #We load the path from the library we're currently looking at
@@ -1240,24 +1363,26 @@ def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths, MaxSaves, Silen
         RomRootFolder = ''
         NonRootFolders = []
         #We iterate through our ROM Paths
-        for RomFolder in RomPaths:
+        for RomFolder in ROMPaths:
             #We make sure we pick up on which folders are being synced to different locations
             #That's what the Subfolder tag is for
             if RomFolder["Subfolder"]:
                 #We add our ROM Folder to our list of subfolders and non-root folders for later 
-                ServerSubFolders.append(RomFolder["Tag"])
+                SubFolders.append(RomFolder["Tag"])
                 NonRootFolders.append(RomFolder)
             else:
                 #We save the root path to it's own value so that we know where the rest of our unspecified ROM folders go
                 RomRootFolder = RomFolder["Path"]
         #Once we've iterated through all of our ROM Folders
         #We call our SyncRomFolder function on our root folder, along with passing it a list of folders to exclude from the root folder's sync location
-        SyncRomFolder(RomRootFolder,"./ROMs/",ServerSubFolders, MaxSaves)
+        if RomRootFolder != '':
+            SyncRomFolder(RomRootFolder,"./ROMs/",SubFolders, MaxSaves)
         #We iterate through all the rest of our folders, and sync them individually
         for folder in NonRootFolders:
-            SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[], MaxSaves)
+            if folder['Path'] != '':
+                SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[], MaxSaves)
     #If we only specified one ROM Folder location, we don't need to exclude any subfolders from the sync and we know we only have one folder to sync to
-    elif len(ROMPaths) == 1:
+    elif len(ROMPaths) == 1 and ROMPaths[0]['Path'] != '':
         SyncRomFolder(ROMPaths[0]["Path"], "./ROMs/", [], MaxSaves)
     #We check for any non-steam games in our database
     NonSteamGameEntries = SQLGetEntry('NonSteamApps', {}, [])
@@ -1308,7 +1433,6 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                     TempSplit = LocalGame['LocalSavePath'].split(MiddlePath)
                     WinePrefix = LocalGame['LocalSavePath'][0]
                     RelativePath = RelativePath.replace('{ WINE PREFIX }',WinePrefix)
-                print(RelativePath)
                 if '{ UID }' == RelativePath.split('/')[-1] and RelativePath.replace('{ UID }','').replace('//','/') in LocalGame['LocalSavePath']:
                     UIDFolderFlag = True
             SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves, UIDFolderFlag)
@@ -1351,17 +1475,22 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 #We get the expected full path of the game we're currently checking
                 FullPath = FullPath.replace('{ HOME }',Home)
                 #We make sure that the file or folder exists, then sync if it does
-                if os.path.isdir(FullPath) or os.path.isfile(FullPath):
+                if os.path.isdir(FullPath) or os.path.isfile(FullPath) and '{ UID }' not in game['RelativeSavePath']:
                     SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
             if '{ UID }' in game['RelativeSavePath']:
-                InsideFolderFlag = False
                 MatchingPaths = UIDFinder(FullPath)
                 if len(MatchingPaths) > 1:
                     print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
                 elif len(MatchingPaths) == 1:
+                    InsideFolderFlag = False
                     FullPath = MatchingPaths[0]
-                    if '( UID }' == game['RelativeSavePath'].split('/')[-1]:
-                        InsideFolderFlag = True
+                    TempSplit = game['RelativeSavePath'].split('/')
+                    if len(TempSplit) > 1:
+                        if TempSplit[-1] != '':
+                            if '{ UID }' == TempSplit[-1]:
+                                InsideFolderFlag = True
+                        elif '{ UID }' == TempSplit[-2]:
+                            InsideFolderFlag = True
                     SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
     return 0 
 #This function is for 
@@ -1387,10 +1516,10 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 if Selection != '':
                     print('ERROR: ' + Selection +' is not a recognized option. Please select an option from the list above or type quit to exit')
                 Selection = input("Please select an entry by typing the corresponding number: ")
-            if Selection == '1':
-                ContinueFlag = True
-            elif Selection == '2':
-                SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, True)
+                if Selection == '1':
+                    ContinueFlag = True
+                elif Selection == '2':
+                    SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, UIDFolderFlag, True)
         elif len(LocalSaveEntry) > 0 or ServerSaveTime == 0:
             ContinueFlag = True
         if ContinueFlag:
@@ -1410,19 +1539,15 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 shutil.copy(LocalSavePath, BackupDirectory)
             elif UIDFolderFlag:
                 shutil.copytree(LocalSavePath,BackupDirectory, dirs_exist_ok=True)
-                '''for file in os.listdir(LocalSavePath):
-                    if os.path.isdir(LocalSavePath + '/' + file):
-                        shutil.copytree(LocalSavePath + '/' + file, BackupDirectory, dirs_exist_ok=True)
-                    elif os.path.isfile(LocalSavePath + '/' + file):
-                        if os.path.isfile(BackupDirectory + '/' + file):
-                            os.remove(BackupDirectory + '/' + file)
-                        shutil.copy(LocalSavePath + '/' + file, BackupDirectory)'''
             SortedSaves = sorted(os.listdir(BackupDirNoTimestamp))
             if len(SortedSaves) > MaxSaves:
                 print("Reached Maximum number of saves...")
                 print("Removing oldest save from backups folder...")
                 print("Deleting Directory: " + BackupDirNoTimestamp + SortedSaves[0])
-                shutil.rmtree()
+                OldestTimestamp = SQLGetMinMax('NonSteamSaveTimestamps', 'Timestamp', { 'GameID': GameID, }, True)[0]['MinVal']
+                SQLDeleteEntry('NonSteamSaveTimestamps', {'GameID': GameID, 'Timestamp': OldestTimestamp })
+                if os.path.isdir(BackupDirNoTimestamp + SortedSaves[0]):
+                    shutil.rmtree(BackupDirNoTimestamp + SortedSaves[0])
                 print("Directory Successfully Deleted!")
             #SQL database entry creation and updates for our new save save timestamp
             SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
@@ -1439,7 +1564,10 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         BackupDirectory = "./NonSteamSaves" + "/" + str(GameID) + "/" + datetime.datetime.fromtimestamp(ServerSaveTime).strftime('%Y-%m-%d_%H%M%S')
         print('More recent save on server than on client!')
         print('Copying Save to client...')
-        print('Source: ' + BackupDirectory + '/' + Filename)
+        if not UIDFolderFlag:
+            print('Source: ' + BackupDirectory + '/' + Filename)
+        else:
+            print('Source: ' + BackupDirectory)
         print('Destination: ' + LocalSavePath)
         #We need to update our SQL entry for this client with the new timestamp, or create a new entry if there isn't one.
         if len(LocalSaveEntry) > 0:
@@ -1455,13 +1583,6 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 os.remove(LocalSavePath)
             shutil.copy(BackupDirectory + '/' + Filename, LocalSavePath)
         elif UIDFolderFlag:
-            shutil.copytree(LocalSavePath,BackupDirectory, dirs_exist_ok=True)
-            ''' for file in os.listdir(BackupDirectory):
-                if os.path.isdir(BackupDirectory + '/' + file):
-                    shutil.copytree(BackupDirectory + '/' + file, BackupDirectory, dirs_exist_ok=True)
-                elif os.path.isfile(BackupDirectory + '/' + file):
-                    if os.path.isfile(LocalSavePath + '/' + file):
-                        os.remove(LocalSavePath + '/' + file)
-                    shutil.copy(LocalSavePath + '/' + file, BackupDirectory)      '''     
+            shutil.copytree(BackupDirectory,LocalSavePath, dirs_exist_ok=True)
         print('Save successfully copied!')
     return 0

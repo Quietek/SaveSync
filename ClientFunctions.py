@@ -186,7 +186,7 @@ def InteractiveClientCreation(ConfigPath):
         ClientName = response
         #We prompt the user for the path to their steam install, if they don't respond we default to ~/.local/share/Steam/ since that's typically where steam is installed.
         #As a note this is untested for custom locations, which may be a problem for Flatpak users?
-        response = input('Please specify the path to your steam install: (default: ' + HomeDir + '/.local/share/Steam/ ): ')
+        response = input('Please specify the path to your steam install (default: ' + HomeDir + '/.local/share/Steam/ ): ')
         #We make sure the path actually exists before moving on
         #NOTE: does not check whether the default path exists before writing it to the config file.
         while (not os.path.isdir(response)) and response != '':
@@ -303,7 +303,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
         print('9. Manually update entry for non-Steam game')
         print('10. Delete Steam game Entry')
         print('11. Delete non-Steam game Entry')
-        print('12. Rollback game save [EXPERIMENTAL]')
+        print('12. Rollback game save')
         print('13. Verify database integrity')
         print('Type q, quit, or exit to quit this program')
         response = input('Please select an entry (1-13): ')
@@ -350,10 +350,12 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                 #TODO Add help entries for formatting and other tips
                 #Prompt the user for the file paths and a name for their new ROM Folder
                 Subfolder = input('Please input a friendly name for the new SteamSync ROM folder: ')
+                print(Subfolder)
                 LocalPath = input('Please type out the path to the ROM folder to sync to: ')
+                print(LocalPath)
                 #We open teh config file, and append the new rom folder to the file
                 ConfigFile = open(PathToConfig, "a")
-                ConfigFile.write('ROMS:' + SubFolder + '=' + LocalPath)
+                ConfigFile.write('ROMS:' + Subfolder + '=' + LocalPath)
                 ConfigFile.close()
                 print('Successfully added new ROM folder to config!')
                 print('ROMs will be synced on next full or ROM Sync.')
@@ -375,11 +377,11 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                 #We handle it differently if more than one ROM folder is specified
                 if len(RomPathList) > 1:
                     #Variable initialization
-                    SubFolders = []
+                    ServerSubFolders = []
                     RomRootFolder = ''
                     NonRootFolders = []
                     #We iterate through the list of ROM Paths
-                    for RomFolder in RomPaths:
+                    for RomFolder in RomPathList:
                             #We make sure subfolders are noted and added to a dedicated list for later
                             if RomFolder["Subfolder"]:
                                     ServerSubFolders.append(RomFolder["Tag"])
@@ -708,9 +710,13 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                                     print(str(i + 1) + ' ' + GameSuffixInfo[i]['Suffix'])
                                 Selection = input('Please select an entry with the corresponding number you wish to edit (1-' + str(len(GameSuffixInfo))+ ') or type a to add a new entry: ')
                                 #We check whether the selection is able to be interpreted correctly
-                                while Selection.lower() not in [ 'q', 'quit', 'exit', 'a' ] and (not Selection.isnumeric() or Selection.lower() != 'a' or int(Selection) > len(GameSuffixInfo)):
+                                ExitFlag = False
+                                while Selection.lower() not in [ 'q', 'quit', 'exit', 'a' ] and not ExitFlag:
                                     print('ERROR: ' + Selection + ' is not a valid selection. Please select a number from the list above, type a to add a new entry, or type q to quit.')
                                     Selection = input('Please select an entry with the corresponding number you wish to edit (1-' + str(len(GameSuffixInfo)) + ' or type a to add a new entry: ')
+                                    if Selection.isnumeric():
+                                        if int(Selection) < len(GameSuffixInfo) + 1:
+                                            ExitFlag = True
                                 #We have a valid suffix we're editing
                                 if Selection.isnumeric() and int(Selection) < len(GameSuffixInfo):
                                     print('Now editing suffix: ' + GameSuffixInfo[int(Selection)-1])
@@ -979,9 +985,10 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
             print('If you wish to exit from this menu, type q')
             print('1. I want to rollback or restore a Steam save')
             print('2. I want to rollback or restore a non-Steam save')
+            print('3. I want to rollback or restore a ROM Save')
             #We initialize a variable to hold the users response and we make sure that we can interpret that response before moving forward
             Selection = ''
-            while Selection.lower() not in [ '1', '2', 'q', 'quit', 'exit' ]:
+            while Selection.lower() not in [ '1', '2','3', 'q', 'quit', 'exit' ]:
                 if Selection != '':
                     print('ERROR: ' + Selection  + ' is not a recognized selection. Please make a valid choice from this list or type q to quit.')
                 Selection = input('Please select a function from the list above (1-2): ')
@@ -1051,11 +1058,14 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             MaxSaves = SQLGetEntry('GlobalVars', {'Key': 'MaxSaves'})[0]['Value']
                             #We update our tables with the new save timestamp
                             SQLUpdateEntry('SteamApps', { 'MostRecentSaveTime': SaveTimestamps[int(Selection)-1]['Timestamp'] },{ 'AppID': int(AppIDResponse) })
+                            SQLCreateEntry('SaveTimestamps', { 'AppID': int(AppIDResponse), 'Timestamp': datetime.datetime.timestamp(NewTimestamp)})
+                            SQLDeleteEntry('SaveTimestamps', { 'AppID': int(AppIDResponse), 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp'] })
                             SQLUpdateEntry('ClientSaveInfo', { 'MostRecentSaveTime': datetime.datetime.timestamp(NewTimestamp) },{ 'AppID': int(AppIDResponse), 'ClientID': ClientDictionary['ClientID'] })
                             #We copy the save from the server to the client
-                            CopySaveFromServer({ 'AppID': AppIDResponse, 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp'], 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': os.path.expanduser('~')})
+                            CopySaveFromServer({ 'AppID': AppIDResponse, 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp'], 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir})
                             #Then we copy the save back to the server with the new save timestamp
-                            CopySaveToServer({ 'AppID': AppIDResponse, 'Timestamp': datetime.datetime.timestamp(NewTimestamp), 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': os.path.expanduser('~')}, int(MaxSaves))
+                            CopySaveToServer({ 'AppID': AppIDResponse, 'Timestamp': datetime.datetime.timestamp(NewTimestamp), 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir}, int(MaxSaves))
+                            shutil.rmtree('./Backups/' + AppIDResponse + '/' + SaveTimestamps[int(Selection)-1]['Timestamp'].strftime('%Y-%m-%d_%H%M%S'))
                         #We let the user know if they selected a game that wasn't installed on this client
                         else:
                             print('ERROR: Save restoration is only supported on machines with the selected GameID installed. Your Selection does not appear to be installed on this client.')
@@ -1098,7 +1108,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                     #We need to get our new timestamp for the save to overwrite the previous one
                     NewTimestamp = datetime.datetime.now()
                     #We make sure we can interpret the user's response before moving forward
-                    while not Selection.isnumeric() and Selection.lower() not in [ 'q', 'quit', 'exit' ] and not SelectionFlag:
+                    while Selection.lower() not in [ 'q', 'quit', 'exit' ] and not SelectionFlag:
                         if Selection != '':
                             print('ERROR: ' + Selection + ' is not a recognized selection. Please make a valid choice from the timestamp list above or type q to quit.')
                         Selection = input('Please make a selection from the list above by typing the number next to the timestamp you wish to roll back to: ')
@@ -1120,7 +1130,11 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             #We make the new directory we're copying the save into
                             os.makedirs(NewDirectory,exist_ok=True)
                             #We copy the save into the new directory
+                            NumericTimestamp = datetime.datetime.timestamp(NewTimestamp)
+                            SQLCreateEntry('NonSteamSaveTimestamps', { 'GameID': int(GameIDResponse), 'Timestamp': NumericTimestamp }) 
                             shutil.copytree(OldDirectory,NewDirectory, dirs_exist_ok=True)
+                            shutil.rmtree(OldDirectory)
+                            SQLDeleteEntry('NonSteamSaveTimestamp', { 'GameID': int(GameIDResponse), 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp']})
                             #We update the database with the new save timestamp
                             SQLUpdateEntry('NonSteamApps',{ 'MostRecentSaveTime': datetime.datetime.timestamp(NewTimestamp) }, { 'GameID': int(GameIDResponse)})
                             #We call our sync function, which should overwrite the local save since the timestamp on the server is based on the current date/time
@@ -1132,6 +1146,70 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             print('If this is incorrect, run a full sync to see if the local save data can be recognized.')
                             print('If this client is still unable to locate your save, you may need to manually add or edit it\'s entry using one of the other options in this program.')
                             print('Or this program may also just be broken right now :(')
+            elif Selection == '3':
+                print('OK! We will roll back a ROM Save.')
+                print('Listing ROM Saves in database...')
+                ROMSaveList = SQLGetEntry('ROMSaves', {})
+                FilenameList = []
+                ContinueFlag = False
+                ROMSaveFilename = ''
+                SubFolder = ''
+                SelectedROMSave = ''
+                for entry in ROMSaveList:
+                    FilenameList.append(entry['FileName'])
+                for i in range(0,len(FilenameList)):
+                    print(str(i+1) + '. ' + FilenameList[i])
+                while not ContinueFlag and SelectedROMSave.lower() not in [ 'q', 'quit', 'exit' ]:
+                    if SelectedROMSave != '':
+                        print('ERROR: ' + SelectedROMSave + ' is not a recognized selection. Please make a valid selection from the list above.')
+                    SelectedROMSave = input('Please select an entry from the list above by typing the corresponding number: ')
+                    if SelectedROMSave.isnumeric():
+                        if int(SelectedROMSave) < len(ROMSaveList) + 1:
+                            ContinueFlag = True
+                            SubFolder = ROMSaveList[int(SelectedROMSave)-1]['SubFolder']
+            if ContinueFlag:
+                    ValidSelectionFlag = False
+                    OldTimestamp = 0
+                    ROMSaveFilename = FilenameList[int(SelectedROMSave) - 1]
+                    print('Attempting to find valid timestamps for ROM ' + ROMSaveFilename + '...')
+                    ROMSaveTimestamps = SQLGetEntry('ROMSaveTimestamps', { 'FileName': ROMSaveFilename })
+                    for j in range(0,len(ROMSaveTimestamps)):
+                        print(str(j+1) + '. ' + datetime.datetime.fromtimestamp(ROMSaveTimestamps[j]['Timestamp']).strftime('%Y-%m-%d_%H%M%S'))
+                    SelectedTimestamp = ''
+                    while not ValidSelectionFlag and SelectedTimestamp.lower() not in [ 'q', 'quit', 'exit' ]:
+                        if SelectedTimestamp != '':
+                            print('ERROR: ' + SelectedTimestamp + ' is not a recognized selection. Please make a valid selection from the list above.')
+                        SelectedTimestamp = input('Please select a timestamp above by typing the corresponding number: ')
+                        if SelectedTimestamp.isnumeric():
+                            if int(SelectedTimestamp) < len(ROMSaveTimestamps) + 1:
+                                ValidSelectionFlag = True
+                    RootPath = ''
+                    SavePath = ''
+                    NewTimestamp = datetime.datetime.now()
+                    if ValidSelectionFlag: 
+                        print('Restoring Save from timestamp: ' + datetime.datetime.fromtimestamp(ROMSaveTimestamps[int(SelectedTimestamp)-1]['Timestamp']).strftime('%Y-%m-%d_%H%M%S'))
+                        for rompath in RomPathList:
+                            print(rompath['Path'] + '/' + SubFolder + '/')
+                            if os.path.isfile(rompath['Path'] + '/' + SubFolder + '/' + ROMSaveFilename): 
+                                SavePath = rompath['Path'] + '/' + SubFolder
+                            elif os.path.isfile(rompath['Path'] + '/' + ROMSaveFilename):
+                                SavePath = rompath['Path']
+                        if SavePath == '' and RootPath != '':
+                            SavePath = RootPath + '/' + SubFolder + '/'
+                        if os.path.isfile(SavePath + ROMSaveFilename) and SavePath != '':
+                            os.remove(SavePath + ROMSaveFilename)
+                        if os.path.isfile('./ROMs/' + SubFolder + '/' + ROMSaveFilename):
+                            os.remove('./ROMs/' + SubFolder + '/' + ROMSaveFilename)
+                        OldPath = './ROMSaves/' + SubFolder + '/' + ROMSaveFilename.split('.')[0] + '/' + datetime.datetime.fromtimestamp(ROMSaveTimestamps[int(SelectedTimestamp)-1]['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
+                        NewPath = './ROMSaves/' + SubFolder + '/' + ROMSaveFilename.split('.')[0] + '/' + NewTimestamp.strftime('%Y-%m-%d_%H%M%S')
+                        os.makedirs(NewPath, exist_ok=True)
+                        shutil.copy(OldPath + '/' + ROMSaveFilename, NewPath + '/' + ROMSaveFilename)
+                        shutil.copy(OldPath + '/' + ROMSaveFilename, './ROMs/' + SubFolder + '/' + ROMSaveFilename)
+                        if SavePath != '':
+                            shutil.copy(OldPath + '/' + ROMSaveFilename, SavePath + ROMSaveFilename)
+                        SQLCreateEntry('ROMSaveTimestamps', { 'FileName': ROMSaveFilename, 'Timestamp': datetime.datetime.timestamp(NewTimestamp) })
+                        SQLDeleteEntry('ROMSaveTimestamps', { 'Filename': ROMSaveFilename, 'Timestamp': ROMSaveTimestamps[int(SelectedTimestamp)-1]['Timestamp']})
+                        shutil.rmtree(OldPath)
         #The user wants to verify that the database is ok and doesn't have any issues
         elif response == '13':
             #We call our initialize database function, which checks to make sure the needed tables are present in the database and will create any that are missing.

@@ -5,13 +5,17 @@
 This is a tool to backup and sync Save Games and ROMs across multiple linux PCs, making it easier to keep your systems on the same save versions. It's primarily targeted towards Steam games that don't support Steam Cloud, but has built in functionality to backup cartridge ROM Game saves in your ROMs folder, as well as functionality to sync any non-Steam games you may have as well. This doesn't require more than one PC, and can also easily be used as a tool to simply backup your game saves for an OS reinstall or to move them to a new computer or just for peace of mind! This software also supports rolling back saves, so if you're ever worried about getting soft locked in a game or having a corrupted save file, you should always have the option to roll back your game save to an earlier version.
 
 ## Features
-- Automatically back up saves for steam games based on information from PC Gaming Wiki
-- Roll back game saves to earlier versions.
-- Keep saves up to date on multiple machines, even if they don't support steam cloud
+- Automatically back up saves for steam games based on information from PC Gaming Wiki.
+- Automatically back up emulator saves, bios, and firmware based on their default paths.
+- Keep saves in sync across multiple machines, even if they don't support steam cloud.
+- Keep ROM folders in sync across multiple machines.
 - Keep backups of multiple save game versions from different times.
-- Keep ROM folders in sync with each other across multiple clients.
+- Roll back game saves to earlier versions.
 - Back up non-Steam game saves by manually specifying their path.
 - Automatically find known non-Steam games on new clients that are installed through proton in steam's compatdata folder, in $HOME/Games via Wine or lutris, or have a matching file path in $HOME and keep them in sync with other machines.
+
+## Disclaimers
+This is beta software being developed by one person in their free time, bugs are expected. If you encounter a bug are are looking for help, please consider submitting a bug report or opening an issue on github. Many of these features have been minimally tested, so you may encounter issues where I haven't. Games that generate PC-specific save files are unsupported. Using this software in conjunction with games that are enabled for Steam Cloud may cause unexpected behavior. 
 
 ## TL;DR
 Download SteamSync from github with either git or as a zip from a browser, extract the archive if necessary, and move the SteamSync folder to where you want your save backups to be. Open a terminal and navigate to inside your SteamSync folder (or right click and select open terminal/command prompt here from most file browsers. Run the following:
@@ -22,21 +26,22 @@ Download SteamSync from github with either git or as a zip from a browser, extra
 #### Always run this, unless you installed pip through other means
 		$ chmod +x pip.sh
 		$ ./pip.sh
-#### If you placed SteamSync on your SD Card and want to have your saves back up/sync whenever your sd card is plugged into your steam deck
-		$ cp SteamSyncOnMount.service ~/.config/systemd/user/
-		$ systemctl --user enable SteamSyncOnMount.service 
-
 Restart your terminal and navigate back into your SteamSync folder. You now have pip installed and can use the same commands as other linux systems.
 
 ### All linux systems
-		$ pip install vdf 
-		$ pip install requests
+		$ pip install vdf requests
 		$ chmod +x SteamSync.py
 		$ ./SteamSync.py
 
 Follow the prompts as they come up, then when you want to sync after the initial sync, run:
 				
 		$ ./SteamSync.py --sync
+
+### Steam Deck Only
+#### If you placed SteamSync on your SD Card and want to have your saves back up/sync whenever your sd card is plugged into your steam deck
+		$ cp SteamSyncOnMount.service ~/.config/systemd/user/
+		$ systemctl --user enable SteamSyncOnMount.service 
+
 
 ## Requirements
 These are required on all PCs you intend to use with this software. Additional steps may be required on some systems to get Python and pip set up.
@@ -49,7 +54,7 @@ The following pip packages are required to be installed. Pip is included with mo
 
     $ pip install vdf requests
 
-### SteamDeck Only
+### Steam Deck Only
 
 The Steam Deck is one system that requires extra steps. An executable script has been included in this repository to get pip installed and working as a user-level install.
 
@@ -74,8 +79,8 @@ First clone this github repository to a local directory using git on the command
 
 Next move the downloaded folder to the desired location of your Save Game and ROM Backups and change the working directory to your new folder (example path of my SD card on my steam deck is given, note that the path may be different on your machine!):
 
-    $ mv SteamSync /run/media/deck/mmcblk0p1/
-    $ cd /run/media/deck/mmcblk0p1/SteamSync/
+    $ mv SteamSync /run/media//mmcblk0p1/
+    $ cd /run/media/mmcblk0p1/SteamSync/
 
 Make SteamSync.py executable:
 
@@ -83,7 +88,7 @@ Make SteamSync.py executable:
 
 You can now run SteamSync from the terminal, it will automatically detect whether it's running for the first time and if it needs to generate a new configuration or initialize the database. Follow the prompts to register your computer with the database. It will automatically sync after initializing a new client.
 
-    $ python SteamSync.py
+    $ ./SteamSync.py
     
 After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service file (SteamSyncOnMount.service) to sync whenever the sd card with the SteamSync folder on it is plugged into the Steam Deck is included. You can use the commands below if you want to use and enable the service file, you may get an error about the unit file not existing, but you should be fine to disregard that warning.
 
@@ -165,6 +170,20 @@ Additionally, if you have SteamSync on a removable drive and plan to remove it i
      $ sync
 
 
+## Supported Emulators
+
+This is a list of emulators that support automatic save, bios, and firmware detection and backup based on their default (at least on my system) linux save locations.
+
+    - zsnes
+    - mupen64plus
+    - Duckstation
+    - PCSX2
+    - RPCS3 [No firmware/bios sync]
+    - ryujinx
+    - yuzu
+
+If you know of another commonly used emulator, especially if it's for a system that isn't covered by these, consider submitting an issue/bug report with any information you can provide about it's default save game locations.
+
 ## F.A.Q.
 
 #### Why should I use this?
@@ -177,7 +196,7 @@ Nope! SteamSync can work great as a simple save backup tool, and can absolutely 
 The SteamSync folder is inteded to be placed on a removable drive such as a flash drive or an SD card. I personally have been keeping it on my Steam Deck's sd card. It can be placed and used anywhere though, so you can place it on a NAS or even just somewhere generic on your PC's SSD/HDD.
 
 #### Is this software compatible with Windows?
-No, and it probably won't be for a while, if ever. While I'd love to say it would be easy to make this compatible with windows, large portions of the code base are built around the assumption that windows games are running in Proton, and using that assumption to determine various file paths. Also, my priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck in particular would have you placing SteamSync on a drive with a filesystem format that windows doesn't support.
+No, and it probably won't be for a while, if ever. My priority is on compatibility with the Steam Deck and general Linux PCs, since those are what I actually use on a daily basis, and many use cases for this with the Steam Deck in particular would have you placing SteamSync on a drive with a filesystem format that windows doesn't support.
 
 #### Is there a Decky plugin for this?
 Not currently, I have considered making one, but the last time I took a look, much of decky was still undocumented.  Also, until I feel better about the state of testing and bugs, I want this project to prioritize general linux compatibility rather than focusing on steam deck specific features. I may revisit this later though.
@@ -192,10 +211,10 @@ Not currently, I have considered making one, but the last time I took a look, mu
 #### What's the difference between all the different save types?
 - A Steam save is always from an installed Steam game. This does not include games that are added to steam as non-Steam games or games installed directly into a proton directory.
 - A Non-Steam save is any save file that you manually specify that isn't installed through steam. This could be the path to an emulator's save data for example, or really any game you're willing to manually locate the save data for that you don't own on Steam. This includes games that were installed into a proton directory or added as non-Steam games.
-- A ROM Save file is a save file that is located in the same directory as the ROM itself. This is generally specific to cartridge based systems that stored their game saves on the cartridge. Currently SteamSync only supports this with .sav files, but more can be added to the codebase with relative ease, if you know of a file extension that should be treated as a save instead of a ROM, please consider letting me know on GitHub.
+- A ROM Save file is a save file that is located in the same directory as the ROM itself. This is generally specific to cartridge based systems that stored their game saves on the cartridge. These are distinguished from normal ROMs by their save extensions. Currently supported ROM Save extensions include .sav, .eep, .fla, .srm, and .ss\*. if you know of a file extension that should be treated as a save instead of a ROM, please consider letting me know on GitHub.
 
 #### What's an AppID and a GameID and how do I find them?
-The AppID is Steam's way of keeping track of which games are which within the steam database. It's a numerical value that won't be changed and will always refer to the same game. A GameID is a custom value created specifically for SteamSync to keep track of non-Steam games, and are based purely off the order they are added to the database. If you need to find the AppID or GameID of a game that's already registered to the SteamSync database, you can run SteamSync.py with the --list command line argument.
+The AppID is Steam's way of keeping track of which games are which within the steam database. It's a numerical value that won't be changed and will always refer to the same game. A GameID is a custom value created specifically for SteamSync to keep track of non-Steam games, the first 9999 GameIDs are reserved for non-Steam games to be added to SteamSync's automatic detection. So, the first non-Steam game you manually add will have a GameID of 10000 If you need to find the AppID or GameID of a game that's already registered to the SteamSync database, you can run SteamSync.py with the --list command line argument.
 
 	$ python SteamSync.py --list
 	
@@ -205,8 +224,7 @@ If you need to reference an AppID that isn't registered to the SteamSync databas
 The interactive Database Manager will help you with that, specifically use option 8 from the main menu, and type the AppID of the game you want to manually specify a path for.
 
 #### I'm using the interactive database manager and it's making references to prefixes and suffixes, what are they?
-Generally you shouldn't need to worry about this, and if you are editing an entry just treat the prefix as the full filepath to your saves. The reason these both exist is because some games don't store all of their saves on the same path, these are usually games that support multiple user profiles. In these cases we split the path into a "Prefix" and a "Suffix", which indicate the path before the split and the path after it. In most cases, there won't be a suffix for the game, and the "prefix" will actually be the full path to the game's save.
-- NOTE new suffixes created after the first sync are NOT automatically detected currently, if you need to add a new suffix after the initial sync, you will need to use the Interactive Database Manager to edit the game's local entry and then add your new suffix afterwards. Notably you'll also need to modify the prefix and add an additional suffix if the game was initially synced with only one save path, but later you add a new user profile for the game. 
+The prefix is the path before a potential split in the filepath, while the suffixes are the paths after it. Any game that has a unique UserID/Profile in the path will be treated as the prefix being the portion before the UserID, and the suffix being the portion after it. New UserIDs should be automatically detected and backed up. If a game doesn't have a UserID associated with it, the prefix will be the full filepath.
 
 An example to demonstrate can be seen with the game Heroes of Might and Magic V. This game allows users to create individually create profiles, each of which has it's own saves, and the paths to get to each profiles saves would be something like:
 
@@ -222,9 +240,7 @@ USER1/Saves/
 USER2/Saves/
 
 #### How does adding multiple ROM folders work?
-- NOTE This functionality is largely untested and should be considered as experimental.
-
-The purpose of adding multiple ROM Folders would be if you want some of your ROM files in one location, while you want the others in another. I refer to these within SteamSync as ROM Subfolders since they're referenced by the subfolder that SteamSync. For example, if you want your gba ROMs in ~/Games/gba/, but you want all your other roms in ~/ROMs/, You can specify a new ROM subfolders by adding/verifying the existence of lines to your config that looks like this: 
+The purpose of adding multiple ROM Folders would be if you want some of your ROM files in one location, while you want the others in another, or you want to include/exclude specific folders on sync. For example, if you want your gba ROMs in ~/Games/gba/, but you want all your other roms in ~/ROMs/, You can specify a new ROM subfolders by adding/verifying the existence of lines to your config that looks like this: 
 
 ROMs:gba=~/Games/gba/ 
 ROMs=~/ROMs/
@@ -234,8 +250,15 @@ Or with a more generic notation:
 ROMs={ PATH WHERE YOU WANT ALL YOUR UNSPECIFIED ROMS/SUBFOLDERS }
 ROMs:{ SUBFOLDER NAME }={ PATH TO WHERE YOU  WANT THOSE ROMS }
  
-There is also a helper function within the interactive database manager, specifically option #3 on the main menu.
+If you want to only sync a specific subfolder on a client, you should leave the portion after the = sign for your root ROM folder blank, and use the subfolder notation as normal like so:
+ROMs=
+ROMs:{ SUBFOLDER NAME }={ PATH TO WHERE YOU  WANT THOSE ROMS }
 
+Or if you want to sync all, excluding a specific folder:
+ROMs={ PATH WHERE YOU WANAT YOUR UNSPECIFIED ROMS/SUBFOLDER}
+ROMs:{ EXCLUDED SUBFOLDER }=
+
+There is also a helper function within the interactive database manager, specifically option #3 on the main menu, but the helper function does not currently support explicit folder inclusion/exclusion.
 
 #### Why do I have to run this from the command line? Wouldn't it be easier/nicer to have a full blown GUI?
 My background is mostly in data analytics, and simply put I have very little experience with UI coding or design. The priority was also getting this working on the command line since that makes it easy tu run in the background and it should improve compatibility across linux distributions. I may attempt to code in a GUI eventually, but I make no guarantees.
@@ -275,12 +298,15 @@ If a game's save directory isn't being detected on new machines, you can manuall
                 $ python SteamSync.py --add gameid={ GAMEID HERE } path={ PASTE PATH TO GAME SAVE HERE }
 
 #### Can I run SteamSync from the Steam Deck's game mode?
-I would encourage you to look into using the provided systemd service file as opposed to running it as a dedicated application in steam, but I believe there should be no reason why you can't add SteamSync.py as an application so long as you make sure it's executable, though you may need to take extra steps to get the command line to pop up when you do.
+I would encourage you to use the provided systemd service file as opposed to running it as a dedicated application in steam, but I believe there should be no reason why you can't add SteamSync.py as an application so long as you make sure it's executable, though you may need to take extra steps to get the command line to pop up when you do.
 
-#### A Steam game's save data isn't getting detected or a folder that shouldn't be considered a save is getting detected as a save, what do I do?
-This is likely because the entry on PC Gaming Wiki is either incorrect, incomplete, or entirely missing. If you can, it is highly encouraged to update/create the wiki page with the relevant save game information if you know where it is. That said, there are cases where that either won't help or isn't a simple thing to do, so you can also manually update the entry in the database using the interactive database manager by running python SteamSync.py with no additional command line arguments.
+#### A Steam game's save data isn't getting detected
+This is likely because the entry on PC Gaming Wiki is either incorrect, incomplete, or entirely missing. If you can, it is highly encouraged to update/create the wiki page with the relevant save game information if you can. That said, there are cases where that either won't help or isn't a simple thing to do, so you can also manually update the entry in the database using the interactive database manager.
 
-If there's an incorrect folder being synced, another possibility is that the UID portion of the file path is located in a folder with non-UID directories, please let me know on GitHub if you find a game with this problem, so far the only ones I have found, and that have been explicitly coded around, are Metro 2033 and Metro Last Light.
+
+#### A folder that shouldn't be considered a save is getting detected as a save, what do I do?
+
+If there's an incorrect folder being synced, it is likely because the UserID portion of the specified filepath is located in a folder with both UserID and non-UserID directories. These are manually excluded by SteamSync currently, butlease let me know on GitHub if you find a game with this problem, so far the only ones I have found are Metro 2033 and Metro Last Light.
 
 #### How can I help/contribute to the project?
 Just using the software and helping identify any bugs you encounter is a big help! If you find something not working correctly, taking some time to submit a bug report would be a big help in squashing remaining issues and incompatibilities.
@@ -289,24 +315,7 @@ Also consider contributing to PC Gaming Wiki, it's a robust resource but there a
 
 This project is completely open source, so if you're ambitious enough you can absolutely feel free to fork the repository and program your own features! We can also merge in any community-created features that are especially useful. 
 
-## Disclaimers
-This section is intended to disclose known bugs, untested features, and other issues that I have found and have either documented or am actively working on.
-
-If you encounter a bug that ISN'T documented here, on the issues page, or on the bugs page, please consider submitting an issue or bug report on github.
-
-Please keep in mind that this is beta software and I'm a solo developer making this in my free time, unknown and undisclosed bugs are expected on some level.
-
-- Save rollback on ROM Saves is currently unsupported, if you need this functionality you will need to manually overwrite the relevant ROM save located in ./ROMs/ with the relevant ROM save from ./ROMSaves/
-- ROM sync only checks the filenames of ROMs, it does not verify the ROM file is the same file.
-- ROM subfolder support remains largely untested.
-- ROM Save file extensions are likely missing, currently only supports backing up .sav files.
-- ROM Saves will only be backed up when a change is detected on a synced client. This means that systems that don't sync the ROMs folder, but have ROMs synced with SteamSync from a different client, will not detect updated game saves if you choose to use the SteamSync tracked ROM folder with the emulator.
-- Various file existence checks before reading remain unimplemented, on some occasions you may encounter crashes if SteamSync tries to reference a path or file that doesn't exist. 
-- The command line argument --silent to mute terminal output remains unimplemented.
-- Using custom paths for Steam, Home, and your Config remains largely untested
-- There is the potential for an incorrect relative path being generated for a non-Steam game if the string 'drive\_c' appears anywhere in the filepath.
-- PC Specific saves are unsupported, the only game I know of that this applies to is Hyper Light Drifter, but don't hesitate to open a bug/issue if you find others.
-- This software is intended for use with games that either don't support steam cloud, or with machines that have Steam Cloud disabled all together. Syncing Steam Cloud games across clients without first disabling steam cloud may cause unexpected behavior.
+I will never ask you to pay for any open source software I develop on Github, but donations do help keep open source software alive and are always greatly appreciated. If you are generous enough to want to support the project monetarily, donations can be made here: https://www.buymeacoffee.com/TFTanner
 
 ## License
 This software is licensed with the GNU General Public License v3, see LICENSE for more details.
