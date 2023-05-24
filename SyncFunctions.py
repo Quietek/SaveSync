@@ -1475,8 +1475,9 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 #We get the expected full path of the game we're currently checking
                 FullPath = FullPath.replace('{ HOME }',Home)
                 #We make sure that the file or folder exists, then sync if it does
-                if os.path.isdir(FullPath) or os.path.isfile(FullPath) and '{ UID }' not in game['RelativeSavePath']:
-                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+                if (os.path.isdir(FullPath) or os.path.isfile(FullPath)):
+                    if '{ UID }' not in game['RelativeSavePath']:
+                        SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
             if '{ UID }' in game['RelativeSavePath']:
                 MatchingPaths = UIDFinder(FullPath)
                 if len(MatchingPaths) > 1:
@@ -1491,7 +1492,8 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                 InsideFolderFlag = True
                         elif '{ UID }' == TempSplit[-2]:
                             InsideFolderFlag = True
-                    SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
+                    if '{ UID }' not in FullPath:
+                        SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
@@ -1577,7 +1579,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         #We check whether we're copying a folder or a file and copy accordingly
         #NOTE this should overwrite the local data in both cases
         if os.path.isdir(BackupDirectory + '/' + Filename) and not UIDFolderFlag:
-            shutil.copytree(BackupDirectory + '/' + Filename,LocalSavePath, dirs_exist_ok=True)
+            shutil.copytree(BackupDirectory + '/' + Filename, LocalSavePath, dirs_exist_ok=True)
         elif os.path.isfile(BackupDirectory + '/' + Filename) and not UIDFolderFlag:
             if os.path.isfile(LocalSavePath):
                 os.remove(LocalSavePath)

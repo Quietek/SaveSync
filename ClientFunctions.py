@@ -1134,11 +1134,21 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             SQLCreateEntry('NonSteamSaveTimestamps', { 'GameID': int(GameIDResponse), 'Timestamp': NumericTimestamp }) 
                             shutil.copytree(OldDirectory,NewDirectory, dirs_exist_ok=True)
                             shutil.rmtree(OldDirectory)
-                            SQLDeleteEntry('NonSteamSaveTimestamp', { 'GameID': int(GameIDResponse), 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp']})
+                            SQLDeleteEntry('NonSteamSaveTimestamps', { 'GameID': int(GameIDResponse), 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp']})
                             #We update the database with the new save timestamp
                             SQLUpdateEntry('NonSteamApps',{ 'MostRecentSaveTime': datetime.datetime.timestamp(NewTimestamp) }, { 'GameID': int(GameIDResponse)})
                             #We call our sync function, which should overwrite the local save since the timestamp on the server is based on the current date/time
-                            SyncNonSteamGame(int(GameIDResponse), ClientSaveInfo[0]['LocalSavePath'], datetime.datetime.timestamp(NewTimestamp), ClientDictionary['ClientID'], MaxSaves)
+                            RelativePath = SQLGetEntry('NonSteamApps', {'GameID': int(GameIDResposne) })[0]['RelativeSavePath']
+                            TempSplit = RelativePath.split('/')
+                            UIDFolderFlag = False
+                            if len(TempSplit) > 1:
+                                if TempSplit[-1] != '':
+                                    if '{ UID }' in TempSplit[-1]:
+                                        UIDFolderFlag = True
+                                    elif '{ UID }' in TempSplit[-2]:
+                                        UIDFolderFlag = True
+                                SyncNonSteamGame(int(GameIDResponse), ClientSaveInfo[0]['LocalSavePath'], datetime.datetime.timestamp(NewTimestamp), ClientDictionary['ClientID'], MaxSaves, UIDFolderFlag)
+
                         #We let the user know that rollback is only supported on games that are known to be locally installed
                         #This may not be 100% necessary and may still work even if the game isn't installed locally, but we want to avoid potential issues with cross communication with a client that does have the game installed locally.
                         else:
@@ -1167,7 +1177,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                         if int(SelectedROMSave) < len(ROMSaveList) + 1:
                             ContinueFlag = True
                             SubFolder = ROMSaveList[int(SelectedROMSave)-1]['SubFolder']
-            if ContinueFlag:
+                if ContinueFlag:
                     ValidSelectionFlag = False
                     OldTimestamp = 0
                     ROMSaveFilename = FilenameList[int(SelectedROMSave) - 1]

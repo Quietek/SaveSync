@@ -113,12 +113,23 @@ if (__name__ == "__main__"):
             #We check to make sure the game actually exists in the database before attempting to sync it
             GameIDEntry = SQLGetEntry('NonSteamApps',{ 'GameID': int(GameID) })
             if len(GameIDEntry) > 0:
+                MaxSaves = int(SQLGetEntry('GlobalVars',{'Key':'MaxSaves'},[])[0]['Value'])
                 #We pull the client save information to check if the game exists in the database already, updating the database instead of creating a new entry if we do
                 ClientSaveEntry = SQLGetEntry('NonSteamClientSaves',{ 'GameID': int(GameID), 'ClientID': int(ClientDictionary['ClientID']) })
                 if len(ClientSaveEntry) > 0:
                     SQLUpdateEntry('NonSteamClientSaves',{ 'LocalSavePath': NewPath }, { 'GameID': int(GameID), 'ClientID': int(ClientDictionary['ClientID'])})
                 else:
                     SQLCreateEntry('NonSteamClientSaves',{ 'GameID': int(GameID), 'ClientID': int(ClientDictionary['ClientID']), 'MostRecentSaveTime': 0, 'LocalSavePath': NewPath })
+                    MostRecentSaveTime = GameIDEntry['MostRecentSaveTime']
+                    UIDFolderFlag = False
+                    TempSplit = GameIDEntry.split('/')
+                    if len(TempSplit)> 1:
+                        if TempSplit[-1] != '':
+                            if '{ UID }' in TempSplit[-1]:
+                                UIDFolderFlag = True
+                        elif '{ UID }' in TempSplit[-2]:
+                                UIDFolderFlag = True
+                    SyncNonSteamGame(int(GameID), NewPath, MostRecentSaveTime, int(ClientDictionary['ClientID']), MaxSaves, UIDFolderFlag, True)
             else:
                 print('ERROR: No game with GameID ' + GameID + ' in database, rerun this command without the GameID specified to add it as a new non-Steam game.')
         #If no GameID was specified, but we correctly read in a path and a title from the command line
@@ -149,7 +160,7 @@ if (__name__ == "__main__"):
                 RelativeSavePath = RelativeSavePath.replace(WinePrefix, '{ WINE PREFIX }')
             #We replace any instances of $HOME with { HOME } in order to signal that the save is located somewhere within the home folder that isn't a wine prefix
             elif ClientDictionary['HomeDir'] in RelativeSavePath:
-                RelativeSavePath = RelativeSavePath.replace(os.path.expanduser('~'), '{ HOME }')
+                RelativeSavePath = RelativeSavePath.replace(ClientDictionary['HomeDir'], '{ HOME }')
             #SQL entry creation for the new game save we just added
             SQLCreateEntry('NonSteamApps', {'GameID': NewGameID, 'Title': GameTitle, 'RelativeSavePath': RelativeSavePath, 'MostRecentSaveTime': 0})
             SQLCreateEntry('NonSteamClientSaves', {'GameID': NewGameID, 'ClientID':ClientDictionary['ClientID'], 'LocalSavePath':NewPath, 'MostRecentSaveTime': 0})
