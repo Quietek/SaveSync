@@ -1141,7 +1141,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             #We update the database with the new save timestamp
                             SQLUpdateEntry('NonSteamApps',{ 'MostRecentSaveTime': datetime.datetime.timestamp(NewTimestamp) }, { 'GameID': int(GameIDResponse)})
                             #We call our sync function, which should overwrite the local save since the timestamp on the server is based on the current date/time
-                            RelativePath = SQLGetEntry('NonSteamApps', {'GameID': int(GameIDResposne) })[0]['RelativeSavePath']
+                            RelativePath = SQLGetEntry('NonSteamApps', {'GameID': int(GameIDResponse) })[0]['RelativeSavePath']
                             TempSplit = RelativePath.split('/')
                             UIDFolderFlag = False
                             if len(TempSplit) > 1:
