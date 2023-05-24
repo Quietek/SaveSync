@@ -637,7 +637,7 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
                 if len(SaveTimestampsList) > MaxSaves:
                     print('Maximum number of saves reached...')
                     OldestTimestamp = SQLGetMinMax('ROMSaveTimestamps','Timestamp', { 'FileName': localfile }, True)[0]['MinVal']
-                    print('Deleting Oldest ROM Save Directory with timestamp: ' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M$S'))
+                    print('Deleting Oldest ROM Save Directory with timestamp: ' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S'))
                     SQLDeleteEntry('ROMSaveTimestamps',{'Timestamp': OldestTimestamp, 'FileName': localfile })
                     if os.path.isdir('./ROMSaves/' + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S')):
                         shutil.rmtree('./ROMSaves/' + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(OldestTimestamp).strftime('%Y-%m-%d_%H%M%S'))

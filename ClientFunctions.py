@@ -390,13 +390,16 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             else:
                                     RomRootFolder = RomFolder["Path"] 
                     #We call our sync ROM function on our root folder, excluding the noted subfolders
-                    SyncRomFolder(RomRootFolder,"./ROMs/",ServerSubFolders, MaxSaves)
+                    if RomRootFolder != '':
+                        SyncRomFolder(RomRootFolder,"./ROMs/",ServerSubFolders, MaxSaves)
                     #We iterate through our list of subfolders and sync those to their specified paths as well
                     for folder in NonRootFolders:
-                        SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[], MaxSaves)
+                        if folder['Path'] != '':
+                            SyncRomFolder(folder["Path"],"./ROMs/" + folder["Tag"],[], MaxSaves)
                 #If there's only 1 ROM folder, we only need to call our SyncROMFolder function once
-                elif len(RomPathList) == 1: 
-                    SyncRomFolder(RomPathList[0]['Path'], "./ROMs/", [], MaxSaves)
+                elif len(RomPathList) == 1:
+                    if RomPathList[0]['Path'] != '':
+                        SyncRomFolder(RomPathList[0]['Path'], "./ROMs/", [], MaxSaves)
             #If they tried to sync their ROM folder but none were found, we display an error to the user letting them know they need to add a ROM folder before trying to sync ROMs 
             else:
                 print('ERROR: No known ROM folders, to add one please add a line to your configuration in the format ROMS={path}.')

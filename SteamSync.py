@@ -120,9 +120,9 @@ if (__name__ == "__main__"):
                     SQLUpdateEntry('NonSteamClientSaves',{ 'LocalSavePath': NewPath }, { 'GameID': int(GameID), 'ClientID': int(ClientDictionary['ClientID'])})
                 else:
                     SQLCreateEntry('NonSteamClientSaves',{ 'GameID': int(GameID), 'ClientID': int(ClientDictionary['ClientID']), 'MostRecentSaveTime': 0, 'LocalSavePath': NewPath })
-                    MostRecentSaveTime = GameIDEntry['MostRecentSaveTime']
+                    MostRecentSaveTime = GameIDEntry[0]['MostRecentSaveTime']
                     UIDFolderFlag = False
-                    TempSplit = GameIDEntry.split('/')
+                    TempSplit = GameIDEntry[0]['RelativeSavePath'].split('/')
                     if len(TempSplit)> 1:
                         if TempSplit[-1] != '':
                             if '{ UID }' in TempSplit[-1]:
