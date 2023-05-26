@@ -1,0 +1,14 @@
+# ~/.config/systemd/user/SaveSyncOnMount.service
+
+[Unit]
+Description=SaveSync Autorun on SD Card Mount Service
+Requires=run-media-mmcblk0p1.mount
+After=run-media-mmcblk0p1.mount
+
+[Service]
+Type=oneshot
+WorkingDirectory=/run/media/mmcblk0p1/SaveSync/
+ExecStart=/usr/bin/python ./SaveSync.py --sync
+
+[Install]
+WantedBy=run-media-mmcblk0p1.mount
