@@ -15,7 +15,7 @@ This is a tool to backup and sync Save Games and ROMs across multiple linux PCs,
 - Automatically find known non-Steam games on new clients that are installed through proton in steam's compatdata folder, in $HOME/Games via Wine or lutris, or have a matching file path in $HOME and keep them in sync with other machines.
 
 ## Disclaimers
-This is beta software being developed by one person in their free time, bugs are expected. If you encounter a bug are are looking for help, please consider submitting a bug report or opening an issue on github. Many of these features have been minimally tested, so you may encounter issues where I haven't. Games that generate PC-specific save files are unsupported. Using this software in conjunction with games that are enabled for Steam Cloud may cause unexpected behavior. 
+This is beta software being developed by one person in their free time, bugs are expected. If you encounter a bug and are looking for help, please consider submitting a bug report or opening an issue on github. Many of these features have been minimally tested, so you may encounter issues where I haven't. Games that generate PC-specific save files are unsupported. Using this software in conjunction with games that are enabled for Steam Cloud may cause unexpected behavior. 
 
 ## TL;DR
 Download SteamSync from github with either git or as a zip from a browser, extract the archive if necessary, and move the SteamSync folder to where you want your save backups to be. Open a terminal and navigate to inside your SteamSync folder (or right click and select open terminal/command prompt here from most file browsers. Run the following:
