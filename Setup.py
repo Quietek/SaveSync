@@ -13,7 +13,7 @@ from sys import platform
 
 
 def GenerateFileExclusions():
-    print("Generating file exclusion index...")
+    print("Generating file exclusion values...")
     ExistingExclusions = SQLGetEntry('FileExclusions',{})
     KnownAppIDList = []
     for val in ExistingExclusions:
@@ -29,7 +29,7 @@ def GenerateFileExclusions():
     if 361670 not in KnownAppIDList:
         SQLCreateEntry('FileExclusions',{'AppID':361670, 'Filename':'Test0.plt'})
         SQLCreateEntry('FileExclusions',{'AppID':361670, 'Filename':'Test1.plt'})
-    print("List finished generating!")
+    print("Finished generating file exclusions!")
     return 0
 
 def GenerateSkippedGames():
@@ -187,35 +187,76 @@ def GenerateAutoDetectedNonSteamGames():
     if 9999 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9999, 'Title': 'Dolphin Gamecube Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/GC/', 'MostRecentSaveTime': 0 }) 
     if 9998 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9998, 'Title': 'Dolphin Wii Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/Wii/title/00010000', 'MostRecentSaveTime': 0 }) 
+        SQLCreateEntry('NonSteamApps',{'GameID': 9998, 'Title': 'Dolphin Wii Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/Wii/title/', 'MostRecentSaveTime': 0 }) 
     if 9997 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9997, 'Title': 'Yuzu Saves', 'RelativeSavePath':'{ HOME }.local/share/yuzu/nand/user/save/0000000000000000/{ UID }', 'MostRecentSaveTime': 0 })
-        SQLCreateEntry('NonSteamApps',{'GameID': 9996, 'Title': 'Yuzu Keys', 'RelativeSavePath': '{ HOME }.local/share/yuzu/keys/', 'MostRecentSaveTime': 0 })
     if 9996 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9995, 'Title': 'Ryujinx Saves', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/user/save/0000000000000001', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9996, 'Title': 'Yuzu Keys', 'RelativeSavePath': '{ HOME }.local/share/yuzu/keys/', 'MostRecentSaveTime': 0 })
     if 9995 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9994, 'Title': 'Ryujinx Keys', 'RelativeSavePath': '{ HOME }.config/Ryujinx/system/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9995, 'Title': 'Ryujinx Saves', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/user/save/0000000000000001', 'MostRecentSaveTime': 0 })
     if 9994 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9993, 'Title': 'Ryujinx Firmware', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/system/Contents/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9994, 'Title': 'Ryujinx Keys', 'RelativeSavePath': '{ HOME }.config/Ryujinx/system/', 'MostRecentSaveTime': 0 })
     if 9993 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9992, 'Title': 'Duckstation Memory Cards', 'RelativeSavePath': '{ HOME }.local/share/duckstation/memcards/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9993, 'Title': 'Ryujinx Firmware', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/system/Contents/', 'MostRecentSaveTime': 0 })
     if 9992 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9991, 'Title': 'Duckstation BIOS', 'RelativeSavePath': '{ HOME }.local/share/duckstation/bios/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9992, 'Title': 'Duckstation Memory Cards', 'RelativeSavePath': '{ HOME }.local/share/duckstation/memcards/', 'MostRecentSaveTime': 0 })
     if 9991 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9990, 'Title': 'PCSX2 Memory Cards', 'RelativeSavePath': '{ HOME }.config/PCSX2/memcards/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9991, 'Title': 'Duckstation BIOS', 'RelativeSavePath': '{ HOME }.local/share/duckstation/bios/', 'MostRecentSaveTime': 0 })
     if 9990 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9989, 'Title': 'PCSX2 BIOS', 'RelativeSavePath':'{ HOME }.config/PCSX2/bios/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9990, 'Title': 'PCSX2 Memory Cards', 'RelativeSavePath': '{ HOME }.config/PCSX2/memcards/', 'MostRecentSaveTime': 0 })
     if 9989 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9989, 'Title': 'PCSX2 BIOS', 'RelativeSavePath':'{ HOME }.config/PCSX2/bios/', 'MostRecentSaveTime': 0 })
+    if 9988 not in KnownGameIDList:
         #You will need to install firmware seperately? Maybe there's a way to sync the firmware too?
         SQLCreateEntry('NonSteamApps',{'GameID': 9988, 'Title': 'RPCS3 Saves', 'RelativeSavePath':'{ HOME }/.config/rpcs3/dev_hdd0/home/00000001/savedata', 'MostRecentSaveTime': 0})
-    if 9988 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9987, 'Title': 'Citra Saves', 'RelativeSavePath':'{ HOME }.local/share/citra-emu/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/', 'MostRecentSaveTime': 0 })
     if 9987 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9986, 'Title': 'Mupen64Plus Saves', 'RelativeSavePath':'{ HOME }/.local/share/mupen64plus/save', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9987, 'Title': 'Citra Saves', 'RelativeSavePath':'{ HOME }.local/share/citra-emu/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/', 'MostRecentSaveTime': 0 })
     if 9986 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9986, 'Title': 'Mupen64Plus Saves', 'RelativeSavePath':'{ HOME }/.local/share/mupen64plus/save', 'MostRecentSaveTime': 0 })
+    if 9985 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9985, 'Title': 'zSNES saves', 'RelativeSavePath': '{ HOME }/.zsnes', 'MostRecentSaveTime': 0 })
     print("List finished generating!")
     return 0
+
+def GenerateSecondaryPaths():
+    print('Generating secondary paths values...')
+    ExistingSecondaryPaths = SQLGetEntry('SecondaryPaths',{})
+    KnownGameIDList = []
+    for val in ExistingSecondaryPaths:
+        if val['GameID'] not in KnownGameIDList:
+            KnownGameIDList.append(val['GameID'])
+    if 9985 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9985, 'SecondaryPath':'{ HOME }/.var/app/io.github.xyproto.zsnes/config/zsnes', 'Description':'Flatpak'})
+    if 9986 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9986, 'SecondaryPath':'{ HOME }/.var/app/com.github.Rosalie241.RMG/data/RMG/Save/Game/', 'Description':'Flatpak - Mupen64Plus with a GUI'})
+    if 9987 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9987, 'SecondaryPath':'{ HOME }/.var/app/org.citra_emu.citra/data/citra-emu/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/', 'Description':'Flatpak'})
+    if 9988 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9988, 'SecondaryPath':'{ HOME }/.var/app/net.rpcs3.RPCS3/config/rpcs3/dev_hdd0/home/00000001/savedata', 'Description':'Flatpak'})
+    if 9989 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9989, 'SecondaryPath': '{ HOME }/.var/app/net.pcsx2.PCSX2/config/PCSX2/bios/', 'Description': 'Flatpak'})
+    if 9990 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9990, 'SecondaryPath': '{ HOME }/.var/app/net.pcsx2.PCSX2/config/PCSX2/memcards/', 'Description': 'Flatpak'})
+    if 9991 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9991, 'SecondaryPath': '{ HOME }/.var/app/org.duckstation.DuckStation/config/duckstation/bios/', 'Description': 'Flatpak'})
+    if 9992 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9992, 'SecondaryPath': '{ HOME }/.var/app/org.duckstation.DuckStation/config/duckstation/memcards/', 'Description': 'Flatpak'})
+    if 9993 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9993, 'SecondaryPath': '{ HOME }/.var/app/org.ryujinx.Ryujinx/config/Ryujinx/bis/system/Contents/', 'Description': 'Flatpak'})
+    if 9994 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9994, 'SecondaryPath': '{ HOME }/.var/app/org.ryujinx.Ryujinx/config/Ryujinx/system/', 'Description': 'Flatpak'})
+    if 9995 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9995, 'SecondaryPath': '{ HOME }/.var/app/org.ryujinx.Ryujinx/config/Ryujinx/bis/user/save/0000000000000001/', 'Description': 'Flatpak'})
+    if 9996 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9996, 'SecondaryPath': '{ HOME }/.var/app/org.yuzu_emu.yuzu/data/yuzu/keys/', 'Description': 'Flatpak' })
+    if 9997 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9997, 'SecondaryPath': '{ HOME }/.var/app/org.yuzu_emu.yuzu/data/yuzu/nand/user/save/0000000000000000/{ UID }/', 'Description': 'Flatpak' })
+    if 9998 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9998, 'SecondaryPath': '{ HOME }/.var/app/org.DolphinEmu.dolphin-emu/data/dolphin-emu/Wii/title/', 'Description': 'Flatpak' })
+    if 9999 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9999, 'SecondaryPath': '{ HOME }/.var/app/org.DolphinEmu.dolphin-emu/data/dolphin-emu/GC/', 'Description': 'Flatpak' })
+    print('Finished generating secondary paths!')
+
 
 def GenerateGlobalVars():
     response = input("Please specify the maximum number of saves you wish to keep backed up (default: 10): ")
@@ -276,7 +317,7 @@ def InitializeDatabase():
             AppID INT NOT NULL,
             ClientID INT NOT NULL,
             Suffix TEXT);""")
-            print("ClientSuffixes Table successfully created!")
+            print("ClientSuffixes table successfully created!")
         if ('SteamApps',) not in Tables:
             print("Creating SteamApps table...")
             LibraryConnection.execute("""CREATE TABLE SteamApps (
@@ -290,7 +331,7 @@ def InitializeDatabase():
             LibraryConnection.execute(""" CREATE TABLE SaveTimestamps (
             AppID INT  NOT NULL,
             Timestamp REAL);""")
-            print("SaveTimestamps Table successfully created!")
+            print("SaveTimestamps table successfully created!")
         if ('SavePathFixes',) not in Tables:
             print("Creating SavePathFixes table...")
             LibraryConnection.execute("""CREATE TABLE SavePathFixes (
@@ -298,6 +339,13 @@ def InitializeDatabase():
             IncorrectString TEXT,
             FixedString TEXT);""")
             print("SavePathFixes table successfully created!")
+        if ('SecondaryPaths',) not in Tables:
+            print("Creating SecondaryPaths table...")
+            LibraryConnection.execute(""" CREATE TABLE SecondaryPaths (
+            GameID INT NOT NULL,
+            SecondaryPath TEXT,
+            Description TEXT);""")
+            print("SecondaryPaths table sucessfully created!")
         if ('FileExclusions',) not in Tables:
             print("Creating FileExclusions table...")
             LibraryConnection.execute("""CREATE TABLE FileExclusions (
@@ -361,16 +409,17 @@ def InitializeDatabase():
             Value TEXT);""")
             print("GlobalVars table successfully created!")
         Tables = Cursor.execute("""SELECT name FROM sqlite_master WHERE type='table'""").fetchall()
-        if len(Tables) == 15:
+        if len(Tables) == 16:
             print("All tables needed present in database.")
             print('Database successfully initialized!')
         else:
-            print("Still missing tables! Consider deleting your saves.db file and rerunning SteamSync.py")
+            print("Still missing tables! Consider deleting your saves.db file and rerunning SaveSync.py")
         GlobalVarCheck = SQLGetEntry('GlobalVars', {})
         if len(GlobalVarCheck) == 0:
             GenerateGlobalVars()
         GenerateFileExclusions()
         GenerateSkippedGames()
         GenerateAutoDetectedNonSteamGames()
+        GenerateSecondaryPaths()
         LibraryConnection.commit()
         LibraryConnection.close()

@@ -22,7 +22,7 @@ def CreateClient(IDNum, ClientName, ConfigPath, HomePath, SteamPath, RomPath):
     print("Client Successfully registered!")
     print("Writing client configuration to " + ConfigPath + "...")
     #This is where we make our config path and write to the config file
-    os.makedirs(HomePath + '/.config/SteamSync/', exist_ok=True)
+    os.makedirs(HomePath + '/.config/SaveSync/', exist_ok=True)
     File = open(ConfigPath, "w+")
     File.write("ClientID=" + str(IDNum) + '\n')
     File.write("ClientName=" + ClientName + '\n')
@@ -86,7 +86,7 @@ def ReadClientConfig(ConfigPath):
 
 #This function is used to help users add a non-Steam game to the database without the need to use command line arguments
 def NonSteamEntryHelperFunction(PathToSteam, ClientID, HomeDir, GameID=0):
-    print('This is a function for adding a non-Steam Game to the SteamSync database or manually specifying a local savepath .')
+    print('This is a function for adding a non-Steam Game to the SaveSync database or manually specifying a local savepath .')
     #We initialize our NewGameID value and read in a list of non-Steam games
     NewGameID = 0
     NonSteamGamesList = SQLGetEntry('NonSteamApps',{}, [])
@@ -170,7 +170,7 @@ def InteractiveClientCreation(ConfigPath):
     if os.path.isfile(ConfigPath):
         print('Warning! A config file was detected at ' + ConfigPath)
         print('Continuing to run this program may overwrite your current configuration, and incorrectly sync your save files.')
-        print('Please make sure you aren\'t using this client with multiple SteamSync Servers before proceeding.')
+        print('Please make sure you aren\'t using this client with multiple SaveSync Servers before proceeding.')
         response = input('Please confirm whether to proceed with client creation in database and overwriting the present config file [y/N]: ')
         #We set an exit flag parameter to tell us if the user actually wants to exit
         if response.lower() in ['y','yes']:
@@ -179,7 +179,7 @@ def InteractiveClientCreation(ConfigPath):
             ExitFlag = True
     #If we make it past this, we know the user does indeed want to create a new client config
     if not ExitFlag:
-        print("This program will create a new client in the SteamSync database and create a local config file at " + ConfigPath)
+        print("This program will create a new client in the SaveSync database and create a local config file at " + ConfigPath)
         #Prompt the user for a client name
         #Technically this isn't used for anything, but it may be needed at some point
         response = input('Please type a friendly name for this client: ')
@@ -284,7 +284,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
         #we consider any time response is empty to be the first run
         #Technically gives false positives, and will redisplay if the user doesn't input anything when prompted
         if response == '':
-            print('Welcome to SteamSync\'s interactive save syncing system!')
+            print('Welcome to SaveSync\'s interactive database management system!')
             print('If you find an error in a steam game\'s save path, please consider helping others out too and updating it\'s entry on PCGamingWiki!')
         #We make sure that the response is eligible before moving on and let the user know we can't interpret their input
         elif response not in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13' ]:
@@ -345,11 +345,11 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
         elif response == '3':
             #We proceed based on whether there is a ROM folder or not
             if SyncRoms == True:
-                print('This function is used to help you add a new ROM folder to your SteamSync Library.')
+                print('This function is used to help you add a new ROM folder to your SaveSync Library.')
                 print('NOTE: You may also add new ROM folder by writing new entries in the format ROMS:{subfolder}={path}')
                 #TODO Add help entries for formatting and other tips
                 #Prompt the user for the file paths and a name for their new ROM Folder
-                Subfolder = input('Please input a friendly name for the new SteamSync ROM folder: ')
+                Subfolder = input('Please input a friendly name for the new SAveSync ROM folder: ')
                 print(Subfolder)
                 LocalPath = input('Please type out the path to the ROM folder to sync to: ')
                 print(LocalPath)
@@ -850,8 +850,8 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
         elif response == '10':
             #We prompt the user asking whether they want to delete the entry globally or if they only want to delete it for this client
             #Also display a warning to make sure they understand that they are deleting information in the database about the game they select
-            print('WARNING: This function is to delete an entry for a steam game within the SteamSync Database.')
-            print('This process is irreversible in it\'s impact on the database, but your save data will continue to be stored by SteamSync unless manually deleted.')
+            print('WARNING: This function is to delete an entry for a steam game within the SaveSync Database.')
+            print('This process is irreversible in it\'s impact on the database, but your save data will continue to be stored by SaveSync unless manually deleted.')
             print('1. Delete entry for ALL clients')
             print('2. Delete entry for this client.')
             Selection = ''
@@ -918,7 +918,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
         #The user wants to delete a non-Steam game entry
         elif response == '11':
             #Display a warning to make sure they understand what they're doing, and ask whether they want to delete from the database entirely or if they only care about deleting the entry related to this client
-            print('WARNING: This function is to delete an entry for a non-Steam game within the SteamSync Database.')
+            print('WARNING: This function is to delete an entry for a non-Steam game within the SaveSync Database.')
             print('This process is irreversible in it\'s impact on the database, but your save data will continue to be stored unless manually deleted.')
             print('1. Delete entry for ALL clients')
             print('2. Delete entry for this client.')
@@ -1068,7 +1068,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             CopySaveFromServer({ 'AppID': AppIDResponse, 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp'], 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir})
                             #Then we copy the save back to the server with the new save timestamp
                             CopySaveToServer({ 'AppID': AppIDResponse, 'Timestamp': datetime.datetime.timestamp(NewTimestamp), 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir}, int(MaxSaves))
-                            shutil.rmtree('./Backups/' + AppIDResponse + '/' + SaveTimestamps[int(Selection)-1]['Timestamp'].strftime('%Y-%m-%d_%H%M%S'))
+                            shutil.rmtree('./SteamSaves/' + AppIDResponse + '/' + SaveTimestamps[int(Selection)-1]['Timestamp'].strftime('%Y-%m-%d_%H%M%S'))
                         #We let the user know if they selected a game that wasn't installed on this client
                         else:
                             print('ERROR: Save restoration is only supported on machines with the selected GameID installed. Your Selection does not appear to be installed on this client.')

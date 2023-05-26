@@ -18,7 +18,7 @@ def CopySaveFromServer(SaveDict):
     #initiate our filename variable
     FileName = ''
     #Create our backup directory variable with the AppID and the timestamp of the save
-    BackupDirectory = "./Backups" + "/" + SaveDict['AppID'] + "/" + datetime.datetime.fromtimestamp(SaveDict['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
+    BackupDirectory = "./SteamSaves" + "/" + SaveDict['AppID'] + "/" + datetime.datetime.fromtimestamp(SaveDict['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
     #Initiate our destination directory from our Prefix value
     DestinationDirectory = SaveDict['Prefix']
     #For each of our suffix values
@@ -44,8 +44,8 @@ def CopySaveFromServer(SaveDict):
             #we perform a check to see if our source value is a file or directory
             if os.path.isdir(Source):
                 #Terminal output for debugging
-                print("Source: " + Source)
-                print("Destination: " + Destination)
+                print("Source: " + Source.replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + Destination.replace('////','/').replace('///','/').replace('//','/'))
                 #We make the destination drectory if it doesn't already exist
                 os.makedirs(Destination.replace(FileName,''),exist_ok=True)
                 #Copy our folder to the destination
@@ -54,8 +54,8 @@ def CopySaveFromServer(SaveDict):
             #If the source is a file as opposed to a folderprint
             elif os.path.isfile(Source):
                 #Terminal output for debugging
-                print("Source: " + Source)
-                print("Destination: " + Destination)
+                print("Source: " + Source.replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + Destination.replace('////','/').replace('///','/').replace('//','/'))
                 #Make our preceding folders for the destination file if they don't exist
                 os.makedirs(Destination.replace(FileName,''),exist_ok=True)
                 #If our destination file already exists, we need to delete it to prevent a file exists error
@@ -80,8 +80,8 @@ def CopySaveFromServer(SaveDict):
         #Check to see if our source is a directory or a file
         if os.path.isdir(Source):
             #Terminal output for debugging
-            print("Source: " + Source)
-            print("Destination: " + Destination)
+            print("Source: " + Source.replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + Destination.replace('////','/').replace('///','/').replace('//','/'))
             #Make the preceding directories for our destination directory if it doesn't exist, since it may not exist before we run a game
             os.makedirs(Destination.replace(FileName,''),exist_ok=True)
             #If our destination is a directory and it already exists, we need to remove it to prevent file exists errors
@@ -93,8 +93,8 @@ def CopySaveFromServer(SaveDict):
         #Check to see if our source is a file
         elif os.path.isfile(Source):
             #Terminal output for debugging
-            print("Source: " + Source)
-            print("Destination: " + Destination)
+            print("Source: " + Source.replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + Destination.replace('////','/').replace('///','/').replace('//','/'))
             #Make the preceding directories for our destination if it doesn't exist
             os.makedirs(Destination.replace(FileName,''),exist_ok=True)
             #If our destination already exists as a file, we need to remove it
@@ -108,8 +108,8 @@ def CopySaveFromServer(SaveDict):
 def CopySaveToServer(SaveDict, MaxSaves):
     #Terminal Output for debugging
     print("Copying Save To Server...")
-    BackupDirectory = "./Backups" + "/" + SaveDict['AppID'] + "/" + datetime.datetime.fromtimestamp(SaveDict['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
-    SaveDirectory = "./Backups" + '/' + SaveDict['AppID'] + '/'
+    BackupDirectory = "./SteamSaves" + "/" + SaveDict['AppID'] + "/" + datetime.datetime.fromtimestamp(SaveDict['Timestamp']).strftime('%Y-%m-%d_%H%M%S')
+    SaveDirectory = "./SteamSaves" + '/' + SaveDict['AppID'] + '/'
     if not os.path.isdir(BackupDirectory):
         os.makedirs(BackupDirectory,exist_ok=True)
     #Initialize our filename variable as an empty value for use later
@@ -118,7 +118,7 @@ def CopySaveToServer(SaveDict, MaxSaves):
     if len(SortedSaves) > MaxSaves:
         print("Reached Maximum number of saves...")
         print("Removing oldest save from backups folder...")
-        print("Deleting Directory: " + SaveDirectory + SortedSaves[0])
+        print("Deleting Directory: " + (SaveDirectory + SortedSaves[0])).replace('////','/').replace('///','/').replace('//','/')
         OldestTimestamp = SQLGetMinMax('SaveTimestamps', 'Timestamp', {'AppID': SaveDict['AppID'] },True)[0]['MinVal']
         SQLDeleteEntry('SaveTimestamps', {'AppID': SaveDict['AppID'], 'Timestamp':OldestTimestamp })
         if os.path.isdir(SaveDirectory + '/' + SortedSaves[0]):
@@ -136,8 +136,8 @@ def CopySaveToServer(SaveDict, MaxSaves):
         #We check to see if our prefix value is a directory
         if os.path.isdir(SaveDict['Prefix']):
             #Terminal output for debugging
-            print("Source: " + SaveDict['Prefix'])
-            print("Destination: " + BackupDirectory + '/' + FileName)
+            print("Source: " + SaveDict['Prefix'].replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + (BackupDirectory + '/' + FileName).replace('////','/').replace('///','/').replace('//','/'))
             #Copy our directory into our backups folder
             shutil.copytree(SaveDict['Prefix'],BackupDirectory + '/' + FileName,dirs_exist_ok=True)
             print("Save Successfully Copied!")
@@ -145,8 +145,8 @@ def CopySaveToServer(SaveDict, MaxSaves):
         #NOTE we already know that the file MUST exist from our earlier checks to get the timestamp
         else:
             #Terminal output for debugging
-            print("Source: " + SaveDict['Prefix'])
-            print("Destination: " + BackupDirectory + '/' + FileName)
+            print("Source: " + SaveDict['Prefix'].replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + (BackupDirectory + '/' + FileName).replace('////','/').replace('///','/').replace('//','/'))
             #Copy our file into our backup directory
             shutil.copy(SaveDict['Prefix'],BackupDirectory + '/' + FileName)
             print("Save Successfully Copied!")
@@ -170,22 +170,22 @@ def CopySaveToServer(SaveDict, MaxSaves):
             #We check to see if our source is a directory
             if os.path.isdir(SaveDict['Prefix'] + '/' + suffix):
                 #Terminal output for debugging
-                print("Source: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                print("Source: " + (SaveDict['Prefix'] + '/' + suffix).replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + (BackupDirectory + '/' + PrecedingFolders + '/' + FileName).replace('////','/').replace('///','/').replace('//','/'))
                 #Copy our file into our backup directory
                 shutil.copytree(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName, dirs_exist_ok=True)
                 print("Save Successfully Copied!")
             #If the preceding folders value is blank and we know our suffix isn't a directory, we need to handle it slightly differently to prevent blank/empty folder creation
             elif PrecedingFolders == '':
-                print("Source: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + FileName)
+                print("Source: " + (SaveDict['Prefix'] + '/' + suffix).replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + (BackupDirectory + '/' + FileName).replace('////','/').replace('///','/').replace('//','/'))
                 #Copy our file to the backup directory
                 shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
                 print("Save Successfully Copied!")
             #Otherwise, we know to copy the file into our newly created folders
             elif '{ UID }' not in SaveDict['Prefix']:
-                print("Souce: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                print("Source: " + (SaveDict['Prefix'] + '/' + suffix).replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + (BackupDirectory + '/' + PrecedingFolders + '/' + FileName).replace('////','/').replace('///','/').replace('//','/'))
                 #Copy our file to the backup directory
                 shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
                 print("Save Successfully Copied!")
@@ -529,9 +529,8 @@ def UIDFinder(Path,Exclusions=[]):
 def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
     #Terminal output to give the user information on what folder we're actually copying from
     print("Syncing ROM Folder...")
-    print(LocalPath)
-    print("Local Path: " + LocalPath)
-    print("Server Path: " + ServerPath)
+    print("Local Path: " + LocalPath.replace('////','/').replace('///','/').replace('//','/'))
+    print("Server Path: " + ServerPath.replace('////','/').replace('///','/').replace('//','/'))
     #Variable initialization
     LocalFiles = []
     ServerFiles = []
@@ -582,8 +581,8 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
         #If the file is missing from the server, isn't a save, and isn't flagged as excluded from our current sync, we copy it to the server
         elif localfile not in ServerFiles and not SaveFlag and localfile not in ExcludedFolders:
             print("Copying ROM From Client...")
-            print("Source: " + LocalPath + '/' + localfile)
-            print("Destination: " + ServerPath + '/' + localfile)
+            print("Source: " + (LocalPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + (ServerPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
             shutil.copy(LocalPath + '/' + localfile,ServerPath +'/' + localfile)
             print("ROM Successfully copied!")
         #If the file is a save, isn't in an excluded folder, and the file exists on both the server and the client
@@ -610,19 +609,19 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
                 os.remove(LocalPath + '/' + localfile)
                 print("ROM Save Successfully deleted!")
                 print("Copying Updated ROM Save to Client...")
-                print("Source: " + ServerPath + '/' + localfile)
-                print("Destination: " + LocalPath + '/' + localfile)
+                print("Source: " + (ServerPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + (LocalPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
                 shutil.copy(ServerPath + '/' + localfile,LocalPath + '/' + localfile)
                 print("ROM Save successfully copied!")
             #We back up the save currently stored on the server, then copy the local file to the server if the local file is more recent
             elif LocalTimestamp > ServerTimestamp:
                 print("More recent ROM Save found on client than on server!")
                 print("Moving Server Save to Backup Folder...")
-                print("Deleting Server ROM Save: " + ServerPath + '/' + localfile)
+                print("Deleting Server ROM Save: " + (ServerPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
                 print("Server ROM Save successfully delteted!")
                 print("Copying Updated ROM Save to Server...")
-                print("Source: " + LocalPath + '/' + localfile)
-                print("Destination: " + ServerPath + '/' + localfile)
+                print("Source: " + (LocalPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
+                print("Destination: " + (ServerPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
                 #SQL entry updates and creation to keep track of our save timestamps
                 SQLUpdateEntry('ROMSaves',{'Timestamp':LocalTimestamp},{'Filename':localfile,'SubFolder':SubFolder})
                 SQLCreateEntry('ROMSaveTimestamps',{'FileName': localfile, 'Timestamp': LocalTimestamp})
@@ -655,8 +654,8 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
             SQLCreateEntry('ROMSaveTimestamps',{'FileName':localfile,'Timestamp':LocalTimestamp})
             #User information output and copying the new save onto our server
             print("Copying local ROM Save to server...")
-            print("Source: " + LocalPath + '/' + localfile)
-            print("Destination: " + ServerPath + '/' + localfile)
+            print("Source: " + (LocalPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + (ServerPath + '/' + localfile).replace('////','/').replace('///','/').replace('//','/'))
             os.makedirs("./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S'),exist_ok=True)
             shutil.copy(LocalPath + '/' + localfile, "./ROMSaves/" + SubFolder + '/' + localfile.replace('.' + Extension,'') + '/' + datetime.datetime.fromtimestamp(LocalTimestamp).strftime('%Y-%m-%d_%H%M%S') + '/')
             shutil.copy(LocalPath + '/' + localfile,ServerPath + '/' + localfile)
@@ -671,8 +670,8 @@ def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
         elif serverfile not in LocalFiles and serverfile not in ExcludedFolders:
             print("File missing from client...")
             print("Copying missing file to client...")
-            print("Source: " + ServerPath + '/' + serverfile)
-            print("Destination: " + LocalPath + '/' + serverfile)
+            print("Source: " + (ServerPath + '/' + serverfile).replace('////','/').replace('///','/').replace('//','/'))
+            print("Destination: " + (LocalPath + '/' + serverfile).replace('////','/').replace('///','/').replace('//','/'))
             shutil.copy(ServerPath + '/' + serverfile, LocalPath + '/' + serverfile)
             print("File successfully copied!")
     return 0
@@ -1349,7 +1348,7 @@ def FullSync(PathToSteam, ClientID, IncludeSteamCloud, ROMPaths, MaxSaves, Silen
     for Library in LibraryVDFDict['libraryfolders']:
         #We load the path from the library we're currently looking at
         LibraryPath = LibraryVDFDict['libraryfolders'][Library]['path']
-        print("Syncing Games From Steam Library Located at: " + LibraryPath)
+        print("Syncing Games From Steam Library Located at: " + LibraryPath.replace('////','/').replace('///','/').replace('//','/'))
         #For every application that's installed to this library
         for AppID in LibraryVDFDict['libraryfolders'][Library]['apps']:
             #We sync the individually installed game using our sync game function
@@ -1399,6 +1398,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     SearchDirs = []
     FoundGames = []
     SteamDirs = []
+    SecondaryDir = ''
     #We get our SQL Data of known games on the current Client
     LocalNonSteamSQLData = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID},[])
     #We check to make sure that the compatdata folder we're going to be checking for the existence of non-steam games in exists
@@ -1438,6 +1438,12 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
             SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves, UIDFolderFlag)
             FoundGames.append(LocalGame['GameID'])
     #variable initialization to create a list of games we need to search for
+    SecondaryPathSQL = SQLGetEntry('SecondaryPaths',{})
+    SecondaryPaths = {}
+    for game in SecondaryPathSQL:
+        if str(game['GameID']) not in SecondaryPaths:
+            SecondaryPaths[str(game['GameID'])] = []
+        SecondaryPaths[str(game['GameID'])].append(game['SecondaryPath'])
     SearchableGames = []
     #We only care about non-steam games we already know about
     if len(KnownNonSteamSQLData) > 0:
@@ -1450,50 +1456,60 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     if len(SearchableGames) > 0:
         #We iterate through our list of unfound non-Steam games
         for game in SearchableGames:
-            FullPath = game['RelativeSavePath']
             print('Searching for game: ' + game['Title'] + ' on new client...')
-            #We use the { WINE PREFIX } string in the relative save path to indicate it was installed into a wine prefix
-            if '{ WINE PREFIX }' in game['RelativeSavePath']:
-                #We pull our path after the drive_c folder from the relative save path
-                WinPath = game['RelativeSavePath'].replace('{ WINE PREFIX }','')
-                #variable initialization
-                i = 0
-                found = False
-                #We iterate through all the directories that could potentially have the save path we're looking for
-                while i < len(SearchDirs) and not found: 
-                    #If we find a match to our expected save path
-                    if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath):
-                        #We flag that we found the save path we were looking for
-                        found = True
-                        #We call the SyncNonSteamGame function for any saves that predate our server save time as well
-                        SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
-                    #Iteration through our list of directories when we haven't found the expected save path yet
-                    else:
-                        i += 1
-            #We also handle the home folder differently, since it may be in a different location on different machines
-            elif '{ HOME }' in game['RelativeSavePath']:
-                #We get the expected full path of the game we're currently checking
-                FullPath = FullPath.replace('{ HOME }',Home)
-                #We make sure that the file or folder exists, then sync if it does
-                if (os.path.isdir(FullPath) or os.path.isfile(FullPath)):
-                    if '{ UID }' not in game['RelativeSavePath']:
-                        SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
-            if '{ UID }' in game['RelativeSavePath']:
-                MatchingPaths = UIDFinder(FullPath)
-                if len(MatchingPaths) > 1:
-                    print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
-                elif len(MatchingPaths) == 1:
-                    InsideFolderFlag = False
-                    FullPath = MatchingPaths[0]
-                    TempSplit = game['RelativeSavePath'].split('/')
-                    if len(TempSplit) > 1:
-                        if TempSplit[-1] != '':
-                            if '{ UID }' == TempSplit[-1]:
+            RelativePaths = []
+            RelativePaths.append(game['RelativeSavePath'])
+            if str(game['GameID']) in SecondaryPaths:
+                for path in SecondaryPaths[str(game['GameID'])]:
+                    RelativePaths.append(path)
+            found = False
+            j = 0
+            while j < len(RelativePaths) and not found:
+                FullPath = RelativePaths[j]
+                #We use the { WINE PREFIX } string in the relative save path to indicate it was installed into a wine prefix
+                if '{ WINE PREFIX }' in FullPath:
+                    #We pull our path after the drive_c folder from the relative save path
+                    WinPath = game['RelativeSavePath'].replace('{ WINE PREFIX }','')
+                    #variable initialization
+                    i = 0
+                    #We iterate through all the directories that could potentially have the save path we're looking for
+                    while i < len(SearchDirs) and not found: 
+                        #If we find a match to our expected save path
+                        if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath):
+                            #We flag that we found the save path we were looking for
+                            found = True
+                            #We call the SyncNonSteamGame function for any saves that predate our server save time as well
+                            SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+                        #Iteration through our list of directories when we haven't found the expected save path yet
+                        else:
+                            i += 1
+                #We also handle the home folder differently, since it may be in a different location on different machines
+                elif '{ HOME }' in FullPath:
+                    #We get the expected full path of the game we're currently checking
+                    FullPath = FullPath.replace('{ HOME }',Home)
+                    #We make sure that the file or folder exists, then sync if it does
+                    if (os.path.isdir(FullPath) or os.path.isfile(FullPath)):
+                        if '{ UID }' not in FullPath:
+                            found = True
+                            SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+                if '{ UID }' in FullPath:
+                    MatchingPaths = UIDFinder(FullPath)
+                    if len(MatchingPaths) > 1:
+                        print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
+                    elif len(MatchingPaths) == 1:
+                        InsideFolderFlag = False
+                        FullPath = MatchingPaths[0]
+                        TempSplit = RelativePaths[j].split('/')
+                        if len(TempSplit) > 1:
+                            if TempSplit[-1] != '':
+                                if '{ UID }' == TempSplit[-1]:
+                                    InsideFolderFlag = True
+                            elif '{ UID }' == TempSplit[-2]:
                                 InsideFolderFlag = True
-                        elif '{ UID }' == TempSplit[-2]:
-                            InsideFolderFlag = True
-                    if '{ UID }' not in FullPath:
-                        SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
+                        if '{ UID }' not in FullPath:
+                            found = True
+                            SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
+                j = j + 1
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
@@ -1532,8 +1548,8 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 os.makedirs(BackupDirectory,exist_ok=True)
             print('More recent save on client than on server!')
             print('Copying Save to server...')
-            print('Source: ' + LocalSavePath)
-            print('Destination: ' + BackupDirectory)
+            print('Source: ' + LocalSavePath.replace('////','/').replace('///','/').replace('//','/'))
+            print('Destination: ' + BackupDirectory.replace('////','/').replace('///','/').replace('//','/'))
             #We check whether we're copying a folder or a file, and copy into the backup directory accordingly
             if os.path.isdir(LocalSavePath) and not UIDFolderFlag:
                 shutil.copytree(LocalSavePath, BackupDirectory + '/' + Filename, dirs_exist_ok=True)
@@ -1545,7 +1561,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
             if len(SortedSaves) > MaxSaves:
                 print("Reached Maximum number of saves...")
                 print("Removing oldest save from backups folder...")
-                print("Deleting Directory: " + BackupDirNoTimestamp + SortedSaves[0])
+                print("Deleting Directory: " + (BackupDirNoTimestamp + SortedSaves[0]).replace('////','/').replace('///','/').replace('//','/'))
                 OldestTimestamp = SQLGetMinMax('NonSteamSaveTimestamps', 'Timestamp', { 'GameID': GameID, }, True)[0]['MinVal']
                 SQLDeleteEntry('NonSteamSaveTimestamps', {'GameID': GameID, 'Timestamp': OldestTimestamp })
                 if os.path.isdir(BackupDirNoTimestamp + SortedSaves[0]):
@@ -1567,10 +1583,10 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         print('More recent save on server than on client!')
         print('Copying Save to client...')
         if not UIDFolderFlag:
-            print('Source: ' + BackupDirectory + '/' + Filename)
+            print('Source: ' + (BackupDirectory + '/' + Filename).replace('////','/').replace('///','/').replace('//','/'))
         else:
-            print('Source: ' + BackupDirectory)
-        print('Destination: ' + LocalSavePath)
+            print('Source: ' + BackupDirectory.replace('////','/').replace('///','/').replace('//','/'))
+        print('Destination: ' + LocalSavePath.replace('////','/').replace('///','/').replace('//','/'))
         #We need to update our SQL entry for this client with the new timestamp, or create a new entry if there isn't one.
         if len(LocalSaveEntry) > 0:
             SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
