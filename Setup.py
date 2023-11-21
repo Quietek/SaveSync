@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import os
 import time
 import json
@@ -193,28 +193,43 @@ def GenerateAutoDetectedNonSteamGames():
     if 9996 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9996, 'Title': 'Yuzu Keys', 'RelativeSavePath': '{ HOME }.local/share/yuzu/keys/', 'MostRecentSaveTime': 0 })
     if 9995 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9995, 'Title': 'Ryujinx Saves', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/user/save/0000000000000001', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9995, 'Title': 'Yuzu Mods', 'RelativeSavePath': '{ HOME }/.local/share/yuzu/load', 'MostRecentSaveTime': 0})
     if 9994 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9994, 'Title': 'Ryujinx Keys', 'RelativeSavePath': '{ HOME }.config/Ryujinx/system/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9994, 'Title': 'Ryujinx Saves', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/user/save/0000000000000001', 'MostRecentSaveTime': 0 })
     if 9993 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9993, 'Title': 'Ryujinx Firmware', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/system/Contents/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9993, 'Title': 'Ryujinx Keys', 'RelativeSavePath': '{ HOME }.config/Ryujinx/system/', 'MostRecentSaveTime': 0 })
     if 9992 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9992, 'Title': 'Duckstation Memory Cards', 'RelativeSavePath': '{ HOME }.local/share/duckstation/memcards/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9992, 'Title': 'Ryujinx Firmware', 'RelativeSavePath': '{ HOME }.config/Ryujinx/bis/system/Contents/', 'MostRecentSaveTime': 0 })
     if 9991 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9991, 'Title': 'Duckstation BIOS', 'RelativeSavePath': '{ HOME }.local/share/duckstation/bios/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9991, 'Title': 'Duckstation Memory Cards', 'RelativeSavePath': '{ HOME }.local/share/duckstation/memcards/', 'MostRecentSaveTime': 0 })
     if 9990 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9990, 'Title': 'PCSX2 Memory Cards', 'RelativeSavePath': '{ HOME }.config/PCSX2/memcards/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9990, 'Title': 'Duckstation BIOS', 'RelativeSavePath': '{ HOME }.local/share/duckstation/bios/', 'MostRecentSaveTime': 0 })
     if 9989 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9989, 'Title': 'PCSX2 BIOS', 'RelativeSavePath':'{ HOME }.config/PCSX2/bios/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9989, 'Title': 'PCSX2 Memory Cards', 'RelativeSavePath': '{ HOME }.config/PCSX2/memcards/', 'MostRecentSaveTime': 0 })
     if 9988 not in KnownGameIDList:
-        #You will need to install firmware seperately? Maybe there's a way to sync the firmware too?
-        SQLCreateEntry('NonSteamApps',{'GameID': 9988, 'Title': 'RPCS3 Saves', 'RelativeSavePath':'{ HOME }/.config/rpcs3/dev_hdd0/home/00000001/savedata', 'MostRecentSaveTime': 0})
+        SQLCreateEntry('NonSteamApps',{'GameID': 9988, 'Title': 'PCSX2 BIOS', 'RelativeSavePath':'{ HOME }.config/PCSX2/bios/', 'MostRecentSaveTime': 0 })
     if 9987 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9987, 'Title': 'Citra Saves', 'RelativeSavePath':'{ HOME }.local/share/citra-emu/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9987, 'Title': 'RPCS3 Saves', 'RelativeSavePath':'{ HOME }/.config/rpcs3/dev_hdd0/home/00000001/savedata', 'MostRecentSaveTime': 0})
     if 9986 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9986, 'Title': 'Mupen64Plus Saves', 'RelativeSavePath':'{ HOME }/.local/share/mupen64plus/save', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9986, 'Title': 'Citra Saves', 'RelativeSavePath':'{ HOME }.local/share/citra-emu/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/', 'MostRecentSaveTime': 0 })
     if 9985 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9985, 'Title': 'zSNES saves', 'RelativeSavePath': '{ HOME }/.zsnes', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9985, 'Title': 'Mupen64Plus Saves', 'RelativeSavePath':'{ HOME }/.local/share/mupen64plus/save', 'MostRecentSaveTime': 0 })
+    if 9984 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9984, 'Title': 'zSNES saves', 'RelativeSavePath': '{ HOME }/.zsnes', 'MostRecentSaveTime': 0 })
+    if 9983 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9983, 'Title': 'Retroarch BIOS', 'RelativeSavePath': '{ HOME }/.config/retroarch/system/', 'MostRecentSaveTime': 0})
+    if 9982 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9982, 'Title': 'Retroarch saves', 'RelativeSavePath': '{ HOME }/.config/retroarch/saves/', 'MostRecentSaveTime': 0})
+    if 9981 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9981, 'Title': 'Xemu BIOS', 'RelativeSavePath': '{ HOME }/.local/share/xemu/bios/', 'MostRecentSaveTime': 0})
+    if 9980 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9980, 'Title': 'Xemu Saves', 'RelativeSavePath': '{ HOME }/.local/share/xemu/hdd_0/', 'MostRecentSaveTime': 0})
+    if 9979 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9979, 'Title': 'Cemu Saves', 'RelativeSavePath': '{ HOME }/.local/share/Cemu/mlc01/usr/save/00050000', 'MostRecentSaveTime': 0})
+    if 9978 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9978, 'Title': 'Cemu Mods', 'RelativeSavePath': '{ HOME }/.local/share/Cemu/graphicPacks/downloadedGraphicPacks', 'MostRecentSaveTime': 0})
+    if 9977 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9977, 'Title': 'Primehack Flatpak Saves', 'RelativeSavePath': '{ HOME }/.var/app/io.github.shiiion.primehack/data/dolphin-emu/Wii/title/00010000', 'MostRecentSaveTime': 0})
     print("List finished generating!")
     return 0
 
@@ -225,6 +240,14 @@ def GenerateSecondaryPaths():
     for val in ExistingSecondaryPaths:
         if val['GameID'] not in KnownGameIDList:
             KnownGameIDList.append(val['GameID'])
+    if 9978 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9978, 'SecondaryPath': '{ HOME }/.var/app/info.cemu.Cemu/data/Cemu/graphicPacks/downloadedGraphicPacks', 'Description': 'Flatpak'})
+    if 9979 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9979, 'SecondaryPath': '{ HOME }/.var/app/info.cemu.Cemu/data/Cemu/mlc01/usr/save/00050000', 'Description': 'Flatpak'})
+    if 9983 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9983, 'SecondaryPath':'{ HOME }/.var/app/org.libretro.RetroArch/config/retroarch/saves/', 'Description':'Flatpak'})
+    if 9984 not in KnownGameIDList:
+        SQLCreateEntry('SecondaryPaths',{ 'GameID': 9984, 'SecondaryPath':'{ HOME }/.var/app/org.libretro.RetroArch/config/retroarch/system/', 'Description':'Flatpak'})
     if 9985 not in KnownGameIDList:
         SQLCreateEntry('SecondaryPaths',{ 'GameID': 9985, 'SecondaryPath':'{ HOME }/.var/app/io.github.xyproto.zsnes/config/zsnes', 'Description':'Flatpak'})
     if 9986 not in KnownGameIDList:
