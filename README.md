@@ -17,117 +17,32 @@ This is a tool to backup and sync Save Games and ROMs across multiple linux PCs,
 ## Disclaimers
 This is beta software being developed by one person in their free time, bugs are expected. If you encounter a bug and are looking for help, please consider submitting a bug report or opening an issue on github. Many of these features have been minimally tested, so you may encounter issues where I haven't. Games that generate PC-specific save files are unsupported. Using this software in conjunction with games that are enabled for Steam Cloud may cause unexpected behavior. 
 
-## TL;DR
-Download SaveSync from github with either git or as a zip from a browser, extract the archive if necessary, and move the SaveSync folder to where you want your save backups to be. Open a terminal and navigate to inside your SaveSync folder (or right click and select open terminal/command prompt here from most file browsers.) Run the following:
+## Appimage Release
+A newly compiled appimage has been released, it is no longer recommended to directly use the python code in this repository. Instead simply download the appimage from the releases page, then run:
 
-### Steam Deck Only
-#### This is necessary to get SaveSync working on your steam deck, as we need some additional python libraries.
-	$ chmod +x pip.sh
-	$ ./pip.sh
-Restart your terminal and navigate back into your SaveSync folder. You now have pip installed and can use the same commands as other linux systems.
+	$ mkdir SaveSync
+        $ mv savesync.AppImage SaveSync/
+	$ cd SaveSync/
+	$ chmod +x savesync.AppImage
+	$ ./SaveSync.AppImage
 
-### All linux systems
-	$ pip install vdf requests
-	$ chmod +x SaveSync.py
-	$ ./SaveSync.py
+### To run a full system sync run:
+	$ ./SaveSync.AppImage --sync
+        
+### To add a non-steam game to the SaveSync database: 
+	$ ./SaveSync.AppImage --add 'title={ INSERT TITLE HERE }' 'path={ INSERT PATH TO SAVE FILE(s) HERE }'
 
-Follow the prompts as they come up, then when you want to sync after the initial sync, run:
-				
-	$ ./SaveSync.py --sync
+### To get a list of all known games in the database:
+	$ ./SaveSync.AppImage --list
 
-### Steam Deck Only
-#### If you placed SaveSync on your SD Card and want to have your saves back up/sync whenever your sd card is plugged into your steam deck
+### To manually add or modify an undetected game path:
+	$ ./SaveSync.AppImage --add 'appid={ INSERT APPID HERE }' 'path={ INSERT PATH TO SAVE FILE(s) HERE }'
+    NOTE: replace the AppID with the gameID for non-steam games.
 
-	$ cp SaveSyncOnMount.service ~/.config/systemd/user/
-	$ systemctl --user enable SaveSyncOnMount.service 
+### To use most other functions, run without command line arguments.
+	$ ./SaveSync.AppImage
 
-Exit out of the Terminal, and restart your Steam Deck. Your saves should now sync every time you insert the SD card.
 
-WARNING Failure to give the sd card enough time to sync in gaming mode, or failing to either power off the steam deck or close out of all open programs that are utilizing the sd card before unplugging it may result in the Steam Deck no longer being able to detect the sd card properly. This may require a reformat of the SD Card and complete data loss. Make sure you give the SD card enough time to sync, and if in doubt, shut down the steam deck before unplugging the SD Card.
-
-## Requirements
-These are required on all PCs you intend to use with this software. Additional steps may be required on some systems to get Python and pip set up.
-- Python
-- pip
-- requests
-- vdf
-
-The following pip packages are required to be installed. Pip is included with most python installations and linux distributions by default, but some systems may require extra steps to get it installed.
-
-    $ pip install vdf requests
-
-### Steam Deck Only
-
-The Steam Deck is one system that requires extra steps. An executable script has been included in this repository to get pip installed and working as a user-level install.
-
-    $ git clone https://github.com/Quietek/SaveSync.git
-    $ cd SaveSync
-
-make our shell script executable and execute it.
-
-    $ chmod +x pip.sh 
-    $ ./pip.sh
-
-You will need to restart your terminal application before attempting the pip command above.
-
-## Installation
-First clone this github repository to a local directory using git on the command line or by using the "download zip" button on github.
-
-    $ git clone https://github.com/Quietek/SaveSync.git
-
-Next move the downloaded folder to the desired location of your Save Game and ROM Backups and change the working directory to your new folder (example path of my SD card on my steam deck is given, note that the path may be different on your machine!):
-
-    $ mv SaveSync /run/media//mmcblk0p1/
-    $ cd /run/media/mmcblk0p1/SaveSync/
-
-Make SaveSync.py executable:
-
-    $ chmod +x SaveSync.py
-
-You can now run SaveSync from the terminal, it will automatically detect whether it's running for the first time and if it needs to generate a new configuration or initialize the database. Follow the prompts to register your computer with the database. It will automatically sync after initializing a new client.
-
-    $ ./SaveSync.py
-    
-After the initial run, you can set up any automation/scheduling software you want. If you're on the steam deck, an example systemd service file (SaveSyncOnMount.service) to sync whenever the sd card with the SaveSync folder on it is plugged into the Steam Deck is included. You can use the commands below if you want to use and enable the service file, you may get an error about the unit file not existing, but you should be fine to disregard that warning.
-
-    $ mkdir -p ~/.config/systemd/user
-    $ mv SaveSyncOnMount.service ~/.config/systemd/user/
-    $ systemctl --user enable SaveSyncOnMount.service
-
-NOTE if you want to run a sync before moving your files to another computer, you can simply unplug your sd card, plug it back in, wait a bit, and then unplug your sd card again and it should update the relevant save files. If your steam library is particularly large, or you expect it to copy a lot of data to your sd card, you may want monitor the service to see when it actually finishes executing before unplugging the device. To do so you can run the following from a command line before unplugging your sd card. You can press Ctrl+C in the terminal to exit the first command after you see SaveSync has finished running.
-    
-    $ watch -n 1 systemctl --user status SaveSyncOnMount.service
-    $ sync
-
-If you're on a different linux system or using a storage medium other than an sd card with the Steam Deck, and you still want to have SaveSync run automatically when you plug in your storage medium, follow these steps.
-    - NOTE the service file will only execute on device mount, so if your system doesn't automatically mount the device when it's plugged in, or doesn't always mount your removable device to the same directory, you may need to manually mount it to the correct directory either from the command line or your file explorer.
-    - Also, chances are you'll know this if this is relevant to you anyways, but if your linux install doesn't use systemd, this guide won't work for you.
-
-1. Make sure the device is mounted and accessible
-2. Make a note of what directory the device is mounted to. If your file explorer doesn't list the full directory path, you can right click and select open terminal/command prompt here, and then run:   
-    
-     	$ pwd
-
-3. run from a command line or terminal:
-
-     	$ systemctl list-units -t mount
-
-4. Find the .mount item listed that is more or less the same as the filepath that you noted earlier but with -'s instead of /'s, and copy it to your clipboard (Ctrl+Shift+C if you aren't familiar with terminal keyboard shortcuts)
-5. Open SaveSyncOnMount.service with a text editor of your choice
-6. Replace every reference to run-media-mmcblk0p1.mount with the .mount item you copied earlier (This may be Ctrl+Shift+V or just Ctrl+V depending on your text editor)
-7. Replace the value after WorkingDirectory= with the path to wherever your SaveSync folder is.
-8. Save and exit from your text editor.
-9. Move the modified service file into your user systemd path, and enable the new service.
-    
-    	$ mv SaveSyncOnMount.service ~/.config/systemd/user
-    	$ systemctl --user enable SaveSyncOnMount.service
-    
-You should now have a systemd service that will execute a sync whenever the system mounts a device in that directory. Exit out of all open windows and restart your Steam Deck.
-
-WARNING Failure to give the sd card enough time to sync in gaming mode, or failing to either power off the steam deck or close out of all open programs that are utilizing the sd card before unplugging it may result in the Steam Deck no longer being able to detect the sd card properly. This may require a reformat of the SD Card and complete data loss. Make sure you give the SD card enough time to sync, and if in doubt, shut down the steam deck before unplugging the SD Card.
-
-## Uninstallation
-    
 To uninstall simply delete the SaveSync folder and the configuration file/directory. This will also delete all your backed up saves, so make sure you've gotten any you need out of the SaveSync folder before deleting. 
 	   
     $ rm -r ./SaveSync
