@@ -17,8 +17,8 @@ This is a tool to backup and sync Save Games and ROMs across multiple linux PCs,
 ## Disclaimers
 This is beta software being developed by one person in their free time, bugs are expected. If you encounter a bug and are looking for help, please consider submitting a bug report or opening an issue on github. Many of these features have been minimally tested, so you may encounter issues where I haven't. Games that generate PC-specific save files are unsupported. Using this software in conjunction with games that are enabled for Steam Cloud may cause unexpected behavior. 
 
-## Appimage Release
-A newly compiled appimage has been released, it is no longer recommended to directly use the python code in this repository. Instead simply download the appimage from the releases page, then run:
+## Installation
+A newly compiled appimage has been released, it is no longer recommended to directly invoke the python scripts in this repository. Instead simply download the AppImage from the releases page, then run:
 
 	$ mkdir SaveSync
         $ mv savesync.AppImage SaveSync/
@@ -42,6 +42,7 @@ A newly compiled appimage has been released, it is no longer recommended to dire
 ### To use most other functions, run without command line arguments.
 	$ ./SaveSync.AppImage
 
+## Uninstallation
 
 To uninstall simply delete the SaveSync folder and the configuration file/directory. This will also delete all your backed up saves, so make sure you've gotten any you need out of the SaveSync folder before deleting. 
 	   
@@ -52,37 +53,6 @@ If you use a systemd service to run your syncs, you will need to disable it and 
     
     $ systemctl --user disable SaveSyncOnMount.service
     $ rm ~/.config/systemd/SaveSyncOnMount.service
-
-## Usage
-After initial setup navigate to the directory where you saved the folder from Github, and run SaveSync.py --sync to sync your folder. Make sure to run SaveSync.py without command line arguments at least once on each PC you use SaveSync with, this is so that it can prompt you again to add a new client when used with an unrecognized PC.
-
-
-The interactive database manager can be used to handle all the following functionality, save rollback, and manual database edits. Running the interactive database manager is the default behavior for SaveSync after the first run of the program.
-
-    $ python SaveSync.py
-
-#### Command Line Arguments
-
-If you're ever stuck, or want more information on what the interactive manager lets you do, use the --help command line argument.
-
-    $ python SaveSync.py --help
-
-If you want to run a sync comparing the backed up saves with what's on your computer, use the --sync command line argument. 
-
-    $ python SaveSync.py --sync
-
-If you want to add a non-Steam game to the database or specify a custom save path for an existing non-Steam game, use the --add command line argument. Note that you should only need to use the first one, unless you have your games installed in an unexpected location (This generally includes Wine games not installed via proton into compatdata or via wine into $HOME/Games, game saves that are located outside your home directory, and emulator saves located outside of the default path)
-
-    $ python SaveSync.py --add 'title={ INSERT TITLE HERE }' 'path={ INSERT PATH TO SAVE FILE(s) HERE }'
-    $ python SaveSync
-If you want to get a list of games in the database, which includes all known GameIDs and AppID's, use the --list command line argument.
-    
-    $ python SaveSync.py --list
-
-Additionally, if you have SaveSync on a removable drive and plan to remove it immediately after a sync has completed, you may need to run an additional command to make sure that the data has indeed finished copying and isn't still in the buffer. This is mostly only needed if you're copying over large amounts of data such as large ROM folders. This command will produce no output, but will not finish executing until the buffer has been completely written to the removable drive.
-   
-     $ sync
-
 
 ## Supported Emulators
 
@@ -128,11 +98,9 @@ Not currently, I have considered making one, but the last time I took a look, mu
 - A ROM Save file is a save file that is located in the same directory as the ROM itself. This is generally specific to cartridge based systems that stored their game saves on the cartridge. These are distinguished from normal ROMs by their save extensions. Currently supported ROM Save extensions include .sav, .eep, .fla, .srm, and .ss\*. if you know of a file extension that should be treated as a save instead of a ROM, please consider letting me know on GitHub.
 
 #### What's an AppID and a GameID and how do I find them?
-The AppID is Steam's way of keeping track of which games are which within the steam database. It's a numerical value that won't be changed and will always refer to the same game. A GameID is a custom value created specifically for 
-275
-7. Check "Force the use of a specific Steam Play compatibility tool" you can change the proton version if you want to, but most games will likely work fine with the default.
+The AppID is Steam's way of keeping track of which games are which within the steam database. It's a numerical value that won't be changed and will always refer to the same game. A GameID is a custom value created specifically for your instance of SaveSync to track your non-Steam saves.
 
-	$ python SaveSync.py --list
+	$ ./SaveSync.AppImage --list
 	
 If you need to reference an AppID that isn't registered to the SaveSync database, you're best bet is to search for it here: https://steamdb.info/apps/ or you can get it from the url of the steam store page, which has it's urls formatted like  this: https://store.steampowered.com/app/[APPID]/[Title]
 
@@ -214,11 +182,10 @@ If a game's save directory isn't being detected on new machines, you can manuall
                 $ python SaveSync.py --add gameid={ GAMEID HERE } path={ PASTE PATH TO GAME SAVE HERE }
 
 #### Can I run SaveSync from the Steam Deck's game mode?
-I would encourage you to use the provided systemd service file as opposed to running it as a dedicated application in steam, but I believe there should be no reason why you can't add SaveSync.py as an application so long as you make sure it's executable, though you may need to take extra steps to get the command line to pop up when you do.
+To be honest I haven't tested this, but I don't see why it wouldn't be possible.
 
 #### A Steam game's save data isn't getting detected, what do I do?
 This is likely because the entry on PC Gaming Wiki is either incorrect, incomplete, or entirely missing. If you can, it is highly encouraged to update/create the wiki page with the relevant save game information if you can. That said, there are cases where that either won't help or isn't a simple thing to do, so you can also manually update the entry in the database using the interactive database manager.
-
 
 #### A folder that shouldn't be considered a save is getting detected as a save, what do I do?
 If there's an incorrect folder being synced, it is likely because the UserID portion of the specified filepath is located in a folder with both UserID and non-UserID directories. These are manually excluded by SaveSync currently. Please let me know on GitHub if you find a game with this problem, so far the only ones I have found are Metro 2033 and Metro Last Light.
