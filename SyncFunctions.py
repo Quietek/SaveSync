@@ -1462,7 +1462,6 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 #We iterate through all the directories that could potentially have the save path we're looking for
                 while i < len(SearchDirs) and not found: 
                     #If we find a match to our expected save path
-                    print(WinPath.split('*'))
                     if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath) or ('*' in WinPath and os.path.isdir(WinPath.split('*')[0])):
                         #We flag that we found the save path we were looking for
                         found = True
