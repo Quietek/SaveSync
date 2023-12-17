@@ -1462,7 +1462,8 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 #We iterate through all the directories that could potentially have the save path we're looking for
                 while i < len(SearchDirs) and not found: 
                     #If we find a match to our expected save path
-                    if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath):
+                    print(WinPath.split('*'))
+                    if os.path.isdir(SearchDirs[i] + WinPath) or os.path.isfile(SearchDirs[i] + WinPath) or ('*' in WinPath and os.path.isdir(WinPath.split('*')[0])):
                         #We flag that we found the save path we were looking for
                         found = True
                         #We call the SyncNonSteamGame function for any saves that predate our server save time as well
@@ -1501,12 +1502,23 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
     LocalSaveEntry = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID, 'GameID':GameID})
     ContinueFlag = False
     #We get the time modified of our local save
-    LocalTimeModified = GetTimeModified(LocalSavePath)
+    
     #We pull the last file/foldername and specify that that's our filename value
     Filename = LocalSavePath.split('/')[-1]
+    LocalTimeModified = 0
     #data sanitation check, some file path splits may end up resulting in an empty value as the last value, so we pull the value before if this happens
     if Filename == '':
         Filename = LocalSavePath.split('/')[-2]
+    if '*' not in Filename:
+        LocalTimeModified = GetTimeModified(LocalSavePath)
+    else:
+        for file in os.listdir(LocalSavePath.replace(Filename,'')):
+            Reg_str = Filename.replace('*','.*')
+            RegExp = re.compile(Reg_str)
+            if RegExp.match(file):
+                TempTimeModified = GetTimeModified(LocalSavePath.replace(Filename,'')+file)
+                if TempTimeModified > LocalTimeModified:
+                    LocalTimeModified = TempTimeModified
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
     if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
         if len(LocalSaveEntry) == 0 and ServerSaveTime != 0:
@@ -1539,6 +1551,13 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 shutil.copytree(LocalSavePath, BackupDirectory + '/' + Filename, dirs_exist_ok=True)
             elif os.path.isfile(LocalSavePath):
                 shutil.copy(LocalSavePath, BackupDirectory)
+            elif '*' in Filename:
+                extension = Filename.split('*')[1]
+                Reg_str = Filename.replace('*','.*')
+                RegExp = re.compile(Reg_str)
+                for file in os.listdir(LocalSavePath.replace(Filename,'')):
+                    if RegExp.match(file):
+                        shutil.copy(LocalSavePath.replace(Filename,'')+'/'+file,BackupDirectory+'/'+file)
             elif UIDFolderFlag:
                 shutil.copytree(LocalSavePath,BackupDirectory, dirs_exist_ok=True)
             SortedSaves = sorted(os.listdir(BackupDirNoTimestamp))
@@ -1584,6 +1603,14 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
             if os.path.isfile(LocalSavePath):
                 os.remove(LocalSavePath)
             shutil.copy(BackupDirectory + '/' + Filename, LocalSavePath)
+        elif '*' in Filename:
+            Reg_str = Filename.replace('*','.*')
+            RegExp = re.compile(Reg_str)
+            for file in os.listdir(BackupDirectory):
+                if RegExp.match(file):
+                    if os.path.isfile(LocalSavePath.replace(Filename,'')+'/'+file):
+                        os.remove(LocalSavePath.replace(Filename,'')+'/'+file)
+                    shutil.copy(BackupDirectory + '/' + file, LocalSavePath.replace(Filename,'')+'/'+file) 
         elif UIDFolderFlag:
             shutil.copytree(BackupDirectory,LocalSavePath, dirs_exist_ok=True)
         print('Save successfully copied!')
