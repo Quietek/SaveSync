@@ -840,16 +840,21 @@ def GetPCGWData(ApplicationDict, GameType='Steam'):
     ReturnDict = {}
     ReturnDict['SteamCloud'] = False
     ReturnDict['Found'] = False
-    #Hardcoded WikiURL to pull json data from PC Gaming Wiki
+    #Hardcoded WikiURL to pull json data from PC Gaming wiki based on steam appID
     if GameType == 'Steam':
         WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game,Cloud&fields=Cloud.Steam,Cloud.GOG_Galaxy,Cloud.Discord,Cloud.Epic_Games_Launcher,Cloud.OneDrive,Cloud.Ubisoft_Connect,Cloud.Xbox,Infobox_game._pageID=PageID,Infobox_game._pageName=Page,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&join_on=Infobox_game._pageID=Cloud._pageID&where=Infobox_game.Steam_AppID%20HOLDS%20%22" + ApplicationDict['AppID'] + "%22&format=json"
+    #Hardcoded wikiURL to pull json data from PC Gaming wiki based on application name
     elif GameType == 'Lutris':
         WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageID=PageID,Infobox_game._pageName%3DPage,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&where=_pageName%3D%22" + ApplicationDict['AppName'] + "%22&format=json"
     #Calling requests to get the page content
     JSONData = requests.get(WikiURL)
+    #If the game is a lutris game that we searched on the title for and we didn't find a result
     if GameType == 'Lutris' and ('cargoquery' not in JSONData.json() or len(JSONData.json()['cargoquery']) == 0):
+        #we find all numbers in the application name
         numbers = re.findall(f'\d+', ApplicationDict['AppName'])
+        #if we only have one distinct number
         if len(numbers) == 1:
+            #We try to search again by replacing the number in the title with roman numerals
             RomanNumeral = roman.toRoman(int(numbers[0]))
             WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageName%3DPage,Infobox_game._pageID=PageID,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&where=_pageName%3D%22" + ApplicationDict['AppName'].replace(numbers[0],RomanNumeral) + "%22&format=json"
             JSONData = requests.get(WikiURL)
@@ -1452,11 +1457,11 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
             if '{ UID }' in RelativePath:
                 if '{ HOME }' in RelativePath:
                     RelativePath = RelativePath.replace('{ HOME }', HomeDir)
-                if '{ WINE PREFIX }' in RelativePath:
-                    Middleath = RelativePath.replace('{ WINE PREFIX }','').replace('{ UID }','')
+                if '{ PROTON PREFIX }' in RelativePath:
+                    Middleath = RelativePath.replace('{ PROTON PREFIX }','').replace('{ UID }','')
                     TempSplit = LocalGame['LocalSavePath'].split(MiddlePath)
                     WinePrefix = LocalGame['LocalSavePath'][0]
-                    RelativePath = RelativePath.replace('{ WINE PREFIX }',WinePrefix)
+                    RelativePath = RelativePath.replace('{ PROTON PREFIX }',WinePrefix)
                 if '{ UID }' == RelativePath.split('/')[-1] and RelativePath.replace('{ UID }','').replace('//','/') in LocalGame['LocalSavePath']:
                     UIDFolderFlag = True
             if HomeDir + '/Games/' in LocalGame['LocalSavePath']:
@@ -1466,6 +1471,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
             
     #variable initialization to create a list of games we need to search for
     SearchableGames = []
+    print(FoundGames)
     #We only care about non-steam games we already know about
     if len(KnownNonSteamSQLData) > 0:
         #iterate through our list of non steam games
@@ -1479,10 +1485,10 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
         for game in SearchableGames:
             FullPath = game['RelativeSavePath']
             print('Searching for game: ' + game['Title'] + ' on new client...')
-            #We use the { WINE PREFIX } string in the relative save path to indicate it was installed into a wine prefix
-            if '{ WINE PREFIX }' in game['RelativeSavePath']:
+            #We use the { PROTON PREFIX } string in the relative save path to indicate it was installed into a wine prefix
+            if '{ PROTON PREFIX }' in game['RelativeSavePath']:
                 #We pull our path after the drive_c folder from the relative save path
-                WinPath = game['RelativeSavePath'].replace('{ WINE PREFIX }','')
+                WinPath = game['RelativeSavePath'].replace('{ PROTON PREFIX }','')
                 #variable initialization
                 i = 0
                 found = False
@@ -1506,15 +1512,22 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 if (os.path.isdir(FullPath) or os.path.isfile(FullPath)):
                     if '{ UID }' not in game['RelativeSavePath']:
                         SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
+            #We handle UIDs in the Relative Save Path defined here
             if '{ UID }' in game['RelativeSavePath']:
+                #We call our UIDFinder function to find any matching paths
                 MatchingPaths = UIDFinder(FullPath)
+                #We let the end user know that we don't currently support more than 1 user on non-steam saves.
                 if len(MatchingPaths) > 1:
                     print('ERROR: Non-Steam games do not currently support multiple profiles on the same machine. The { UID } tag is meant to distinguish PC specific generated filepaths.')
+                #if we only had one matching path
                 elif len(MatchingPaths) == 1:
+                    #we split our path on the /'s
                     InsideFolderFlag = False
                     FullPath = MatchingPaths[0]
                     TempSplit = game['RelativeSavePath'].split('/')
+                    #we make sure that we have at least 2 folders in the path
                     if len(TempSplit) > 1:
+                        #We check for the '{ UID }' being defined in our path, using a flag to denote we're in a UID folder
                         if TempSplit[-1] != '':
                             if '{ UID }' == TempSplit[-1]:
                                 InsideFolderFlag = True
@@ -1522,34 +1535,54 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                             InsideFolderFlag = True
                     if '{ UID }' not in FullPath:
                         SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
+    #We iterate through our remaining search directories
     for directory in SearchDirs:
+        #We check whether this is a Steam-defined non-steam game, only continuing if we're searching in the ~/Games directory
         if 'compatdata' not in directory:
+            #We get the last folder name of our filepath
             if directory[-1] == '/':
                 PrefixDirName = directory.split('/')[-2]
             else:
                 PrefixDirName = directory.split('/')[-1]
+            #We check to make sure it hasn't been matched yet
             if PrefixDirName not in MatchedDirs:
+                #We replace -'s with ' 's since that's lutris's default file naming behavior
                 AppName = PrefixDirName.replace('-',' ')
+                #we iterate through our list of games installed via lutris
                 for file in os.listdir(os.path.expanduser('~') + '/.config/lutris/games'):
+                    #we make sure that the full game name is in the filename, this is needed to prevent ii and iii matching to the same file
+                    #NOTE the -crt- exclusion is specific to my setup, where I have multiple games declared for singular wine prefixes to run at unique resolutions for CRT displays. 
                     if PrefixDirName + '-' in file and '-crt-' not in file and PrefixDirName not in MatchedDirs:
+                        #We open the file
                         with open(os.path.expanduser('~') + '/.config/lutris/games/' + file) as filestream:
+                            #we try to loand in the yaml
                             try:
                                 LutrisDict = yaml.safe_load(filestream)
+                                #we check for our expected declarations in the lutris file
                                 if 'game' in LutrisDict:
                                     if 'exe' in LutrisDict['game']:
+                                        #we use the game exe's location as the install path
+                                        #NOTE: this is likely not going to work in 100% of cases, as a game can have it's exe located in a subdirectory.
                                         InstallDir = LutrisDict['game']['exe'].replace(LutrisDict['game']['exe'].split('/')[-1],'')
+                                        #We declare our proton path
                                         ProtonPath = os.path.expanduser('~') + '/Games/' + PrefixDirName
+                                        #we initialize our app dictionary
                                         AppDict = {}
                                         AppDict['Home'] = os.path.expanduser('~')
                                         AppDict['AppName'] = AppName
                                         AppDict['InstallDir'] = InstallDir
                                         AppDict['ProtonPath'] = ProtonPath
+                                        #if the game has an install directory specified
                                         if AppDict['InstallDir'] != '':
+                                            #we look on PC Gaming Wiki for our game
                                             PCGWDict = GetPCGWData(AppDict,'Lutris')
+                                        #if no install directory is specified, we simply ignore the game.
                                         else:
                                             PCGWDict['Found'] = False
+                                        #If we found a game using our PCGW API call
                                         if PCGWDict['Found']:
-                                            print('New Nonsteam Game Located!')
+                                            #We tell the user a new game has been added and sync our newly located non-steam game
+                                            print('Nonsteam Game' + AppDict['AppName'] + ' Located!')
                                             NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
                                             SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': AppDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
                                             SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves)

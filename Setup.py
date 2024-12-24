@@ -189,7 +189,7 @@ def GenerateAutoDetectedNonSteamGames():
     if 9998 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9998, 'Title': 'Dolphin Wii Saves', 'RelativeSavePath': '{ HOME }.local/share/dolphin-emu/Wii/title/', 'MostRecentSaveTime': 0 }) 
     if 9997 not in KnownGameIDList:
-        SQLCreateEntry('NonSteamApps',{'GameID': 9997, 'Title': 'Yuzu Saves', 'RelativeSavePath':'{ HOME }.local/share/yuzu/nand/user/save/0000000000000000/{ UID }', 'MostRecentSaveTime': 0 })
+        SQLCreateEntry('NonSteamApps',{'GameID': 9997, 'Title': 'Yuzu Saves', 'RelativeSavePath':'{ HOME }.local/share/yuzu/nand/user/save/0000000000000000/{ UID}/', 'MostRecentSaveTime': 0 })
     if 9996 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9996, 'Title': 'Yuzu Keys', 'RelativeSavePath': '{ HOME }.local/share/yuzu/keys/', 'MostRecentSaveTime': 0 })
     if 9995 not in KnownGameIDList:
