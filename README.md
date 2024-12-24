@@ -139,7 +139,7 @@ If you want to only sync a specific subfolder on a client, you should leave the 
 - ROMs:{ SUBFOLDER NAME }={ PATH TO WHERE YOU  WANT THOSE ROMS }
 
 Or if you want to sync all, excluding a specific folder:
-- ROMs={ PATH WHERE YOU WANAT YOUR UNSPECIFIED ROMS/SUBFOLDER}
+- ROMs={ PATH WHERE YOU WANT YOUR UNSPECIFIED ROMS/SUBFOLDERS}
 - ROMs:{ EXCLUDED SUBFOLDER }=
 
 There is also a helper function within the interactive database manager, specifically option #3 on the main menu, but the helper function does not currently support explicit folder inclusion/exclusion.

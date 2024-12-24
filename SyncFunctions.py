@@ -1030,6 +1030,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
             #Attempt to pull information on the client's most recent save information
             #Get the game's title from our SQL Database
             GameTitle = SQLGetEntry('SteamApps',{'AppID': AppID }, ['Title'])[0]['Title']
+            SteamCloud = SQLGetEntry('SteamApps',{'AppID': AppID }, ['SteamCloud'])[0]['SteamCloud']
             #Variable initialization for use later
             Suffixes = []
             SaveDict = {}
@@ -1109,7 +1110,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                     #Create a SQL entry for our new save timestamp
                     SQLCreateEntry('SaveTimestamps',{'AppID':AppID,'Timestamp':LocalSaveTime})
                 #If the time modified on the server is more recent than the local file's time modified timestamp
-                elif MostRecentSaveTime > LocalSaveTime:
+                elif MostRecentSaveTime > LocalSaveTime and not SteamCloud:
                     #Terminal output for debugging
                     print('==========================================================')
                     print("More recent save on server than locally stored located!")
@@ -1302,6 +1303,9 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
             #We only proceed if the PCGW entry exists and we either are including steam cloud or it's not a steam cloud game
             if PCGWDict['Found'] and (PCGWDict['SteamCloud'] == False or (PCGWDict['SteamCloud'] == True and IncludeSteamCloud)):
                 #Terminal output for debugging
+                SteamCloud = 0
+                if PCGWDict['SteamCloud']:
+                    SteamCloud = 1
                 print('==========================================================')
                 print('Unregistered Game\'s Local Save Data Found!')
                 print('Title: ' + PCGWDict['Title'])
@@ -1311,7 +1315,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 if len(AppSQLData) > 0:
                     SQLUpdateEntry('SteamApps',{'AlwaysSkipped':0, 'Title': PCGWDict['Title'].replace('\'','\'\''), 'MostRecentSaveTime': PCGWDict['TimeModified']}, {'AppID': AppID})
                 else:
-                    SQLCreateEntry('SteamApps',{'AppID':AppID, 'AlwaysSkipped':0, 'Title': PCGWDict['Title'].replace('\'','\'\''), 'MostRecentSaveTime': PCGWDict['TimeModified']})
+                    SQLCreateEntry('SteamApps',{'AppID':AppID, 'AlwaysSkipped':0, 'SteamCloud':SteamCloud, 'Title': PCGWDict['Title'].replace('\'','\'\''), 'MostRecentSaveTime': PCGWDict['TimeModified']})
                 if len(ClientSaveSQLData) > 0:
                     SQLUpdateEntry('ClientSaveInfo',{'Skipped':0, 'InstallPath':GameDataDict['InstallDir'].replace('\'','\'\''), 'MostRecentSaveTime':PCGWDict['TimeModified'], 'ProtonPrefix':GameDataDict['ProtonPath'].replace('\'','\'\'')}, {'AppID':AppID, 'ClientID': ClientID })
                     SQLCreateEntry('SaveTimestamps',{'AppID':AppID, 'Timestamp': PCGWDict['TimeModified']})
@@ -1471,7 +1475,6 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
             
     #variable initialization to create a list of games we need to search for
     SearchableGames = []
-    print(FoundGames)
     #We only care about non-steam games we already know about
     if len(KnownNonSteamSQLData) > 0:
         #iterate through our list of non steam games
@@ -1582,7 +1585,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                         #If we found a game using our PCGW API call
                                         if PCGWDict['Found']:
                                             #We tell the user a new game has been added and sync our newly located non-steam game
-                                            print('Nonsteam Game' + AppDict['AppName'] + ' Located!')
+                                            print('Nonsteam Game ' + AppDict['AppName'] + ' Located!')
                                             NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
                                             SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': AppDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
                                             SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves)

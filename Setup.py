@@ -348,6 +348,7 @@ def InitializeDatabase():
             LibraryConnection.execute("""CREATE TABLE SteamApps (
             AppID INT PRIMARY KEY NOT NULL,
             AlwaysSkipped INT,
+            SteamCloud INT,
             Title TEXT,
             MostRecentSaveTime REAL);""")
             print("SteamApps table successfully created!")
