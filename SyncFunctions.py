@@ -1504,7 +1504,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                         #We call the SyncNonSteamGame function for any saves that predate our server save time as well
                         MatchedDirs.append(SearchDirs[i].split('/')[-1])
                         SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
-                    #Iteration through our list of directories when we haven't found the expected save path yet
+                        #Iteration through our list of directories when we haven't found the expected save path yet
                     else:
                         i += 1
             #We also handle the home folder differently, since it may be in a different location on different machines
@@ -1617,7 +1617,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 if TempTimeModified > LocalTimeModified:
                     LocalTimeModified = TempTimeModified
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
-    if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
+    if LocalTimeModified >= ServerSaveTime and not OverwriteFlag:
         if len(LocalSaveEntry) == 0 and ServerSaveTime != 0:
             print('Unsynced Client has more recent save than server!')
             print('1. Set new client\'s save as the most recent on the server')
