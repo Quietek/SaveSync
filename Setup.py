@@ -230,6 +230,8 @@ def GenerateAutoDetectedNonSteamGames():
         SQLCreateEntry('NonSteamApps',{'GameID': 9978, 'Title': 'Cemu Mods', 'RelativeSavePath': '{ HOME }/.local/share/Cemu/graphicPacks/downloadedGraphicPacks', 'MostRecentSaveTime': 0})
     if 9977 not in KnownGameIDList:
         SQLCreateEntry('NonSteamApps',{'GameID': 9977, 'Title': 'Primehack Flatpak Saves', 'RelativeSavePath': '{ HOME }/.var/app/io.github.shiiion.primehack/data/dolphin-emu/Wii/title/00010000', 'MostRecentSaveTime': 0})
+    if 9976 not in KnownGameIDList:
+        SQLCreateEntry('NonSteamApps',{'GameID': 9976, 'Title': 'shadPS4 Saves', 'RelativeSavePath': '{ HOME }/.local/share/shadPS4/savedata', 'MostRecentSaveTime': 0})
     print("List finished generating!")
     return 0
 

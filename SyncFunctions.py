@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 import sqlite3
 import time
 import os
@@ -6,6 +6,8 @@ import requests
 import json
 import vdf
 import re
+import yaml
+import roman
 import subprocess
 import shutil
 import datetime
@@ -305,7 +307,7 @@ def VerifyLocalData(ReferencePaths):
                 TempList.append(directory)
         Directories = TempList
         #If we haven't found a file yet, or we have found a file and we can tell that we are looking for a file by the syntax of our reference path
-        if (SaveType in ['Unfound', 'Filename'] and (Directories[-1][-1] == '*' or ('.' in Directories[-1]))):
+        if (SaveType in ['Unfound', 'Filename'] and len(Directories) > 0 and (Directories[-1][-1] == '*' or ('.' in Directories[-1]))):
             TempPath = ''
             #We copy our preceding folders into a temporary value
             for i in range(0,len(Directories)-1):
@@ -707,9 +709,11 @@ def CheckForUpdatedROMSaves(MaxSaves):
 
 
 #Function to convert PCGW data into a usable filepath
-def GetFilepaths(ApplicationDict, UnprocessedPath):
+def GetFilepaths(ApplicationDict, UnprocessedPath, GameType='Steam'):
     Exclusions = []
-    ExclusionSQLData = SQLGetEntry('FileExclusions',{'AppID':ApplicationDict['AppID']},[])
+    ExclusionSQLData = []
+    if 'AppID' in ApplicationDict:
+        ExclusionSQLData = SQLGetEntry('FileExclusions',{'AppID':ApplicationDict['AppID']},[])
     if len(ExclusionSQLData) > 0:
         for entry in ExclusionSQLData:
             Exclusions.append(entry['Filename'])
@@ -719,7 +723,7 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
     #Initialize our UID substitution since we know we'll need to check for existing files or folders for our UIDFinder function instead of a determined value, regardless of system or game platform
     SubstitutionDict['\{\{p\|uid\}\}'] = '{ UID }'
     #Generate our substitution dictionary if we're looking for a linux save
-    if ApplicationDict['SystemPlatform'] == 'Linux':
+    if GameType == 'Steam' and ApplicationDict['SystemPlatform'] == 'Linux':
         SubstitutionDict['\{\{p\|linuxhome\}\}'] = ApplicationDict['Home']
         SubstitutionDict['\{\{p\|xdgdatahome\}\}'] = ApplicationDict['Home'] + '/.local/share/'
         SubstitutionDict['\{\{p\|xdgconfighome\}\}'] = ApplicationDict['Home'] + '/.config/'
@@ -727,7 +731,7 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
         SubstitutionDict['~'] = ApplicationDict['Home']
     #Generate our substitution dictionary if we're looking for a windows game save on a linux system
     #For some reason steam doesn't always correctly write SystemPlatform and GamePlatform values to the app_manifest
-    if ApplicationDict['SystemPlatform'] != ApplicationDict['GamePlatform'] or os.path.isdir(ApplicationDict['SteamPath'] + '/steamapps/compatdata/' + ApplicationDict['AppID']):
+    if GameType == 'Steam' and (ApplicationDict['SystemPlatform'] != ApplicationDict['GamePlatform'] or os.path.isdir(ApplicationDict['SteamPath'] + '/steamapps/compatdata/' + ApplicationDict['AppID'])):
         SubstitutionDict['\{\{p\|localappdata\}\}'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/users/steamuser/AppData/Local/'
         SubstitutionDict['\{\{p\|appdata\}\}'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/users/steamuser/AppData/Roaming/'
         SubstitutionDict['\{\{p\|userprofile\\Documents\}\}'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/users/steamuser/My Documents/'
@@ -736,6 +740,15 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
         SubstitutionDict['\{\{p\|programdata\}\}'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/programdata/'
         SubstitutionDict['\{\{p\|userprofile'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/users/steamuser/'
         SubstitutionDict['\{\{p\|username\}\}'] = ApplicationDict['ProtonPath'] + 'pfx/drive_c/users/steamuser/'
+    if GameType == 'Lutris':
+        SubstitutionDict['\{\{p\|localappdata\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/AppData/Local/'
+        SubstitutionDict['\{\{p\|appdata\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/AppData/Roaming/'
+        SubstitutionDict['\{\{p\|userprofile\\Documents\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/My Documents/'
+        SubstitutionDict['\{\{Path\|localappdata\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/AppData/Local/'
+        SubstitutionDict['\{\{p\|userprofile\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/'
+        SubstitutionDict['\{\{p\|programdata\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/programdata/'
+        SubstitutionDict['\{\{p\|userprofile'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/'
+        SubstitutionDict['\{\{p\|username\}\}'] = ApplicationDict['ProtonPath'] + '/drive_c/users/steamuser/'
     #NOTE This is currently unused
     #Placeholder for potential usage on Windows
     else:
@@ -784,10 +797,10 @@ def GetFilepaths(ApplicationDict, UnprocessedPath):
     return ReturnPaths
 
 #Helper function to get our filepaths for each system's save types we find
-def ParseSaveData(ApplicationDict, SaveDataDict):
+def ParseSaveData(ApplicationDict, SaveDataDict, GameType='Steam'):
     ReturnList = []
     for SaveType in SaveDataDict:
-        ReturnList.extend(GetFilepaths(ApplicationDict,SaveDataDict[SaveType]))
+        ReturnList.extend(GetFilepaths(ApplicationDict,SaveDataDict[SaveType],GameType))
     return ReturnList
 
 #Helper function to replace our relative path readable by any client with the current client's absolute path
@@ -813,7 +826,7 @@ def GetRelativePath(PathDict, Path):
         RelativePath = RelativePath.replace(PathDict['ProtonPath'],'{ PROTON PREFIX }' + '/')
     if PathDict['InstallDir'] in RelativePath:
         RelativePath = RelativePath.replace(PathDict['InstallDir'],'{ PATH TO GAME }')
-    if PathDict['SteamPath'] in RelativePath:
+    if 'SteamPath' in PathDict and PathDict['SteamPath'] in RelativePath:
         RelativePath = RelativePath.replace(PathDict['SteamPath'],'{ PATH TO STEAM }')
     if PathDict['Home'] in RelativePath:
         RelativePath = RelativePath.replace(PathDict['Home'],'{ HOME }')
@@ -821,16 +834,25 @@ def GetRelativePath(PathDict, Path):
     return ReturnPath
 
 #Function to get PCGW Data from PC Gaming Wiki
-def GetPCGWData(ApplicationDict):
+def GetPCGWData(ApplicationDict, GameType='Steam'):
     #Variable initialization
     ReturnPaths = []
     ReturnDict = {}
     ReturnDict['SteamCloud'] = False
     ReturnDict['Found'] = False
     #Hardcoded WikiURL to pull json data from PC Gaming Wiki
-    WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game,Cloud&fields=Cloud.Steam,Cloud.GOG_Galaxy,Cloud.Discord,Cloud.Epic_Games_Launcher,Cloud.EA_Desktop,Cloud.OneDrive,Cloud.Ubisoft_Connect,Cloud.Xbox,Infobox_game._pageID=PageID,Infobox_game._pageName=Page,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&join_on=Infobox_game._pageID=Cloud._pageID&where=Infobox_game.Steam_AppID%20HOLDS%20%22" + ApplicationDict['AppID'] + "%22&format=json"
+    if GameType == 'Steam':
+        WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game,Cloud&fields=Cloud.Steam,Cloud.GOG_Galaxy,Cloud.Discord,Cloud.Epic_Games_Launcher,Cloud.OneDrive,Cloud.Ubisoft_Connect,Cloud.Xbox,Infobox_game._pageID=PageID,Infobox_game._pageName=Page,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&join_on=Infobox_game._pageID=Cloud._pageID&where=Infobox_game.Steam_AppID%20HOLDS%20%22" + ApplicationDict['AppID'] + "%22&format=json"
+    elif GameType == 'Lutris':
+        WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageID=PageID,Infobox_game._pageName%3DPage,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&where=_pageName%3D%22" + ApplicationDict['AppName'] + "%22&format=json"
     #Calling requests to get the page content
     JSONData = requests.get(WikiURL)
+    if GameType == 'Lutris' and ('cargoquery' not in JSONData.json() or len(JSONData.json()['cargoquery']) == 0):
+        numbers = re.findall(f'\d+', ApplicationDict['AppName'])
+        if len(numbers) == 1:
+            RomanNumeral = roman.toRoman(int(numbers[0]))
+            WikiURL = "https://www.pcgamingwiki.com/w/api.php?action=cargoquery&tables=Infobox_game&fields=Infobox_game._pageName%3DPage,Infobox_game._pageID=PageID,Infobox_game.Developers,Infobox_game.Released,Infobox_game.Cover_URL&where=_pageName%3D%22" + ApplicationDict['AppName'].replace(numbers[0],RomanNumeral) + "%22&format=json"
+            JSONData = requests.get(WikiURL)
     RawSaveDataDict = {}
     Cargo = {}
     LinuxSave = False
@@ -843,7 +865,7 @@ def GetPCGWData(ApplicationDict):
         #Make sure that the page we requestsed exists
         if len(Cargo) > 0:
             #Check for steam cloud integration
-            if Cargo[0]['title']['Steam'] == 'true':
+            if 'Steam' in Cargo[0]['title'] and Cargo[0]['title']['Steam'] == 'true':
                 ReturnDict['SteamCloud'] = True
             else:
                 ReturnDict['SteamCloud'] = False
@@ -857,6 +879,7 @@ def GetPCGWData(ApplicationDict):
                 ParsedWikiData = RawWikiData.json()['parse']['wikitext']['*']
                 #use a regular expression to find our Save Game Data Location section of the wiki text
                 RawSaveLocations = re.search('===Save game data location===[\S\n ]+?===.+===',ParsedWikiData)
+                #print(RawSaveLocations.group())
                 #If we found a save game data location in our text
                 if RawSaveLocations:
                     #We want to get the raw data for any of the individual platforms we can find
@@ -883,7 +906,7 @@ def GetPCGWData(ApplicationDict):
     #We make sure we found at least one usable save from any of the platforms before continuing
     if (LinuxSave or SteamSave or WindowsSave): 
         #We call our parse save data function to take the raw text from PCGW and turn it into a usable file path
-        SaveDataList = ParseSaveData(ApplicationDict, RawSaveDataDict)
+        SaveDataList = ParseSaveData(ApplicationDict, RawSaveDataDict, GameType)
         #We call our verifylocaldata function with our new save paths, so we can find which files exist that we potentially want to backup
         VerifiedSaveDataDict = VerifyLocalData(SaveDataList)
         #Initialize our return values
@@ -1399,6 +1422,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
     SearchDirs = []
     FoundGames = []
     SteamDirs = []
+    MatchedDirs = []
     #We get our SQL Data of known games on the current Client
     LocalNonSteamSQLData = SQLGetEntry('NonSteamClientSaves',{'ClientID':ClientID},[])
     #We check to make sure that the compatdata folder we're going to be checking for the existence of non-steam games in exists
@@ -1435,8 +1459,11 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                     RelativePath = RelativePath.replace('{ WINE PREFIX }',WinePrefix)
                 if '{ UID }' == RelativePath.split('/')[-1] and RelativePath.replace('{ UID }','').replace('//','/') in LocalGame['LocalSavePath']:
                     UIDFolderFlag = True
+            if HomeDir + '/Games/' in LocalGame['LocalSavePath']:
+                MatchedDirs.append(LocalGame['LocalSavePath'].replace(HomeDir + '/Games/','').split(['/'])[0])
             SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves, UIDFolderFlag)
             FoundGames.append(LocalGame['GameID'])
+            
     #variable initialization to create a list of games we need to search for
     SearchableGames = []
     #We only care about non-steam games we already know about
@@ -1466,6 +1493,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                         #We flag that we found the save path we were looking for
                         found = True
                         #We call the SyncNonSteamGame function for any saves that predate our server save time as well
+                        MatchedDirs.append(SearchDirs[i].split('/')[-1])
                         SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
                     #Iteration through our list of directories when we haven't found the expected save path yet
                     else:
@@ -1494,6 +1522,40 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                             InsideFolderFlag = True
                     if '{ UID }' not in FullPath:
                         SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
+    for directory in SearchDirs:
+        if 'compatdata' not in directory:
+            if directory[-1] == '/':
+                PrefixDirName = directory.split('/')[-2]
+            else:
+                PrefixDirName = directory.split('/')[-1]
+            if PrefixDirName not in MatchedDirs:
+                AppName = PrefixDirName.replace('-',' ')
+                for file in os.listdir(os.path.expanduser('~') + '/.config/lutris/games'):
+                    if PrefixDirName + '-' in file and '-crt-' not in file and PrefixDirName not in MatchedDirs:
+                        with open(os.path.expanduser('~') + '/.config/lutris/games/' + file) as filestream:
+                            try:
+                                LutrisDict = yaml.safe_load(filestream)
+                                if 'game' in LutrisDict:
+                                    if 'exe' in LutrisDict['game']:
+                                        InstallDir = LutrisDict['game']['exe'].replace(LutrisDict['game']['exe'].split('/')[-1],'')
+                                        ProtonPath = os.path.expanduser('~') + '/Games/' + PrefixDirName
+                                        AppDict = {}
+                                        AppDict['Home'] = os.path.expanduser('~')
+                                        AppDict['AppName'] = AppName
+                                        AppDict['InstallDir'] = InstallDir
+                                        AppDict['ProtonPath'] = ProtonPath
+                                        if AppDict['InstallDir'] != '':
+                                            PCGWDict = GetPCGWData(AppDict,'Lutris')
+                                        else:
+                                            PCGWDict['Found'] = False
+                                        if PCGWDict['Found']:
+                                            print('New Nonsteam Game Located!')
+                                            NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
+                                            SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': AppDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
+                                            SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves)
+                                            MatchedDirs.append(PrefixDirName)
+                            except yaml.YAMLError as exc:
+                                print(exc)
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
@@ -1572,7 +1634,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
             #SQL database entry creation and updates for our new save save timestamp
             SQLCreateEntry('NonSteamSaveTimestamps', {'GameID':GameID, 'Timestamp':LocalTimeModified })
             SQLUpdateEntry('NonSteamApps',{'MostRecentSaveTime':LocalTimeModified}, {'GameID':GameID})
-            #We need to update our SQL entry for this client with the new timestamp, or create a new entry if one doesn't exist
+            #We need to update our SQL entry for this client with the new timestamp, or create a new entry if one doesn't exi<F12>st
             if len(LocalSaveEntry) > 0:
                 SQLUpdateEntry('NonSteamClientSaves',{ 'MostRecentSaveTime':LocalTimeModified }, { 'GameID': GameID, 'ClientID': ClientID })
             else:
