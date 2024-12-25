@@ -127,6 +127,7 @@ def CopySaveToServer(SaveDict, MaxSaves):
             shutil.rmtree(SaveDirectory + SortedSaves[0])
         print("Directory Successfully Deleted!")
     #If our suffixes are a length of 0 or 1, we know that we only need to worry about 1 file/folder
+    print(SaveDict)
     if len(SaveDict['Suffixes']) == 0 or (len(SaveDict['Suffixes']) == 1 and SaveDict['Suffixes'] == ['']):
         #Generate the list of preceding directories using our prefix
         SplitPath = SaveDict['Prefix'].split('/')
@@ -156,42 +157,46 @@ def CopySaveToServer(SaveDict, MaxSaves):
     else:
         #We iterate through our list of suffixes
         for suffix in SaveDict['Suffixes']:
-            #We get our relative suffix, since the prefix could be the root directory, and we need to make the structure compatible across clients
-            RelativeSuffix= GetRelativePath(SaveDict,'/' + suffix)
-            #We split our suffix to get our filename
-            TempSplit = suffix.replace('////','/').replace('///','/').replace('//','/').split('/')
-            #Pull our filename from the last non blank value of our suffix
-            if TempSplit[-1] != '':
-                FileName = TempSplit[-1]
-            else:
-                FileName = TempSplit[-2]
-            #Get the preceding folders to our filename by splitting on the filename and taking the first value
-            PrecedingFolders = RelativeSuffix.split(FileName)[0]
-            #Make our destination directories for our save
-            os.makedirs(BackupDirectory+'/'+PrecedingFolders,exist_ok=True)
-            #We check to see if our source is a directory
-            if os.path.isdir(SaveDict['Prefix'] + '/' + suffix):
-                #Terminal output for debugging
-                print("Source: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
-                #Copy our file into our backup directory
-                shutil.copytree(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName, dirs_exist_ok=True)
-                print("Save Successfully Copied!")
-            #If the preceding folders value is blank and we know our suffix isn't a directory, we need to handle it slightly differently to prevent blank/empty folder creation
-            elif PrecedingFolders == '':
-                print("Source: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + FileName)
-                #Copy our file to the backup directory
-                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
-                print("Save Successfully Copied!")
-            #Otherwise, we know to copy the file into our newly created folders
-            elif '{ UID }' not in SaveDict['Prefix']:
-                print("Souce: " + SaveDict['Prefix'] + '/' + suffix)
-                print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
-                #Copy our file to the backup directory
-                shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
-                print("Save Successfully Copied!")
-    return 0
+            if suffix != '':
+                #We get our relative suffix, since the prefix could be the root directory, and we need to make the structure compatible across clients
+                RelativeSuffix= GetRelativePath(SaveDict,'/' + suffix)
+                #We split our suffix to get our filename
+                TempSplit = suffix.replace('////','/').replace('///','/').replace('//','/').split('/')
+                print(TempSplit)
+                #Pull our filename from the last non blank value of our suffix
+                if TempSplit[-1] != '':
+                    FileName = TempSplit[-1]
+                elif len(TempSplit) > 1:
+                    FileName = TempSplit[-2]
+                else:
+                    FileName = ''
+                #Get the preceding folders to our filename by splitting on the filename and taking the first value
+                PrecedingFolders = RelativeSuffix.split(FileName)[0]
+                #Make our destination directories for our save
+                os.makedirs(BackupDirectory+'/'+PrecedingFolders,exist_ok=True)
+                #We check to see if our source is a directory
+                if os.path.isdir(SaveDict['Prefix'] + '/' + suffix):
+                    #Terminal output for debugging
+                    print("Source: " + SaveDict['Prefix'] + '/' + suffix)
+                    print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                    #Copy our file into our backup directory
+                    shutil.copytree(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName, dirs_exist_ok=True)
+                    print("Save Successfully Copied!")
+                #If the preceding folders value is blank and we know our suffix isn't a directory, we need to handle it slightly differently to prevent blank/empty folder creation
+                elif PrecedingFolders == '':
+                    print("Source: " + SaveDict['Prefix'] + '/' + suffix)
+                    print("Destination: " + BackupDirectory + '/' + FileName)
+                    #Copy our file to the backup directory
+                    shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + FileName)
+                    print("Save Successfully Copied!")
+                #Otherwise, we know to copy the file into our newly created folders
+                elif '{ UID }' not in SaveDict['Prefix']:
+                    print("Souce: " + SaveDict['Prefix'] + '/' + suffix)
+                    print("Destination: " + BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                    #Copy our file to the backup directory
+                    shutil.copy(SaveDict['Prefix'] + '/' + suffix, BackupDirectory + '/' + PrecedingFolders + '/' + FileName)
+                    print("Save Successfully Copied!")
+        return 0
 
 #Function to find the differences in file paths if multiple files/folders are found that we need to backup
 def GetPrefixAndSuffixes(PathList):
@@ -1252,7 +1257,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                     elif response == '3':
                         SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 1})
                 #If the local save time is less up to date than the save on the server
-                else:
+                elif MostRecentSaveTime > LocalSaveTime and not SteamCloud:
                     #We initialize new variables for our absolute paths
                     #NOTE We cannot reference found paths since we may not necessarily have found any local data to compare the timestamp too
                     AbsolutePaths = []
@@ -1617,7 +1622,7 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
                 if TempTimeModified > LocalTimeModified:
                     LocalTimeModified = TempTimeModified
     #If the local save time is greater than the server's save time, and we haven't flagged this save to overwrite the save on this client
-    if LocalTimeModified >= ServerSaveTime and not OverwriteFlag:
+    if LocalTimeModified > ServerSaveTime and not OverwriteFlag:
         if len(LocalSaveEntry) == 0 and ServerSaveTime != 0:
             print('Unsynced Client has more recent save than server!')
             print('1. Set new client\'s save as the most recent on the server')
@@ -1711,4 +1716,6 @@ def SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, 
         elif UIDFolderFlag:
             shutil.copytree(BackupDirectory,LocalSavePath, dirs_exist_ok=True)
         print('Save successfully copied!')
+    elif ServerSaveTime == LocalTimeModified:
+        SyncNonSteamGame(GameID, LocalSavePath, ServerSaveTime, ClientID, MaxSaves, UIDFolderFlag, True)
     return 0

@@ -25,6 +25,9 @@ def GenerateFileExclusions():
         SQLCreateEntry('FileExclusions',{'AppID':287390, 'Filename':'pc'})
     if 286690 not in KnownAppIDList:
         SQLCreateEntry('FileExclusions',{'AppID':286690, 'Filename':'2033'})
+    if 2835570 not in KnownAppIDList:
+        SQLCreateEntry('FileExclusions',{'AppID':2835570, 'Filename':'shader_cache'})
+        SQLCreateEntry('FileExclusions',{'AppID':2835570, 'Filename':'vulkan'})
     #Star Wars X-Wing Alliance matches on .plt files, but we can ignore the test files
     if 361670 not in KnownAppIDList:
         SQLCreateEntry('FileExclusions',{'AppID':361670, 'Filename':'Test0.plt'})

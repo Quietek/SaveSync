@@ -573,7 +573,7 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             NewSavePath = input('Please type the new relative save path: ')
                             #We update or create the entry depending on if the AppID we're editing has a relative save path on file or not
                             if len(PathEntry) > 0 and NewSavePath.lower() not in [ 'q', 'quit', 'exit' ]:
-                                SQLUpdateEntry('RelativeSavePaths', {'RelativePath', NewSavePath}, {'AppID': AppID})
+                                SQLUpdateEntry('RelativeSavePaths', {'RelativePath': NewSavePath}, {'AppID': AppID})
                             elif NewSavePath.lower() not in [ 'q', 'quit', 'exit' ]:
                                 SQLCreateEntry('RelativeSavePaths', {'AppID': AppID, 'RelativePath': NewSavePath })
                     #The AppID the user input isn't in the database
@@ -1018,7 +1018,6 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                     #We give the User a list of valid save timestamps that the database has on record
                     print('Attempting to find valid save timestamps for AppID: ' + AppIDResponse)
                     SaveTimestamps = SQLGetEntry('SaveTimestamps', { 'AppID': int(AppIDResponse) })
-                    print(SaveTimestamps)
                     #We need to keep track of how many saves we have, so that we can know which are valid and which aren't
                     NumSaves = 0
                     #We print the various save timestamps to the user
@@ -1068,7 +1067,8 @@ def InteractiveDatabaseManager(PathToSteam, PathToConfig):
                             CopySaveFromServer({ 'AppID': AppIDResponse, 'Timestamp': SaveTimestamps[int(Selection)-1]['Timestamp'], 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir})
                             #Then we copy the save back to the server with the new save timestamp
                             CopySaveToServer({ 'AppID': AppIDResponse, 'Timestamp': datetime.datetime.timestamp(NewTimestamp), 'Prefix':PrefixEntry['Prefix'], 'Suffixes': FormattedSuffixList, 'ProtonPath': ClientSaveInfo[0]['ProtonPrefix'], 'InstallDir': ClientSaveInfo[0]['InstallPath'], 'SteamPath': ClientDictionary['SteamPath'], 'Home': HomeDir}, int(MaxSaves))
-                            shutil.rmtree('./SteamSaves/' + AppIDResponse + '/' + SaveTimestamps[int(Selection)-1]['Timestamp'].strftime('%Y-%m-%d_%H%M%S'))
+                            TimeObj = datetime.datetime.fromtimestamp(SaveTimestamps[int(Selection)-1]['Timestamp'])
+                            shutil.rmtree('./Backups/' + AppIDResponse + '/' + TimeObj.strftime('%Y-%m-%d_%H%M%S'))
                         #We let the user know if they selected a game that wasn't installed on this client
                         else:
                             print('ERROR: Save restoration is only supported on machines with the selected GameID installed. Your Selection does not appear to be installed on this client.')

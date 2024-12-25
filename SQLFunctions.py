@@ -124,6 +124,9 @@ def SQLUpdateEntry(TableName, Values, Restrictions):
         Query = 'UPDATE ' + TableName + ' SET '
         #Compile our query with the data from our passed in dictionary
         for column in Values:
+            print(Values)
+            print(column)
+            print(Values[column])
             #must denote strings with 's per SQLs guidelines
             if type(Values[column]) == str:
                 Query += column + " = '" + Values[column] + "', "
