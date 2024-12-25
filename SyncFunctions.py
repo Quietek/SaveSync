@@ -127,7 +127,6 @@ def CopySaveToServer(SaveDict, MaxSaves):
             shutil.rmtree(SaveDirectory + SortedSaves[0])
         print("Directory Successfully Deleted!")
     #If our suffixes are a length of 0 or 1, we know that we only need to worry about 1 file/folder
-    print(SaveDict)
     if len(SaveDict['Suffixes']) == 0 or (len(SaveDict['Suffixes']) == 1 and SaveDict['Suffixes'] == ['']):
         #Generate the list of preceding directories using our prefix
         SplitPath = SaveDict['Prefix'].split('/')
@@ -162,7 +161,6 @@ def CopySaveToServer(SaveDict, MaxSaves):
                 RelativeSuffix= GetRelativePath(SaveDict,'/' + suffix)
                 #We split our suffix to get our filename
                 TempSplit = suffix.replace('////','/').replace('///','/').replace('//','/').split('/')
-                print(TempSplit)
                 #Pull our filename from the last non blank value of our suffix
                 if TempSplit[-1] != '':
                     FileName = TempSplit[-1]
@@ -536,7 +534,6 @@ def UIDFinder(Path,Exclusions=[]):
 def SyncRomFolder(LocalPath, ServerPath, ExcludedFolders, MaxSaves):
     #Terminal output to give the user information on what folder we're actually copying from
     print("Syncing ROM Folder...")
-    print(LocalPath)
     print("Local Path: " + LocalPath)
     print("Server Path: " + ServerPath)
     #Variable initialization
