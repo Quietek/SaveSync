@@ -1089,7 +1089,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 else:                
                     LocalSaveTime = GetTimeModified(PathPrefix)
                 #If this client has a more recent save than what's backed up
-                if LocalSaveTime > MostRecentSaveTime:
+                if LocalSaveTime > MostRecentSaveTime or (LocalSaveTime != MostRecentSaveTime and SteamCloud):
                     #Terminal output for debugging
                     print('==========================================================')
                     print("More recent save than registered to server located!")
@@ -1175,7 +1175,7 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                 i = 0
                 #if the client has a save that is more recent than the server
                 #the and statement is a safety check needed for an edge case where a user has installed a game that does use proton but 
-                if LocalSaveTime > MostRecentSaveTime:
+                if LocalSaveTime > MostRecentSaveTime and not SteamCloud:
                     response = ''
                     #We now know that the client's save game is newer than the servers
                     #We prompt the user for how to proceed
@@ -1253,6 +1253,62 @@ def SyncGame(AppID, PathToSteam, LibraryPath, ClientID, IncludeSteamCloud, MaxSa
                     #We add the client's save to the SQL server and mark it as skipped
                     elif response == '3':
                         SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 1})
+                elif LocalSaveTime > MostRecentSaveTime and SteamCloud:
+                    #Terminal output for debugging
+                    print("More recent save than registered to server located!")
+                    print("Title: " + GameDataDict['Title'])
+                    print("AppID: " + AppID)
+                    #Compile our SaveDict Dictionary which has everything we should need to copy the save to our server
+                    SaveDict['Timestamp'] = LocalSaveTime
+                    SaveDict['Prefix'] = Prefix
+                    SaveDict['Suffixes'] = Suffixes
+                    SaveDict['AppID'] = AppID
+                    SaveDict['ProtonPath'] = ProtonPath
+                    SaveDict['SteamPath'] = PathToSteam
+                    SaveDict['Home'] = HomeDir
+                    SaveDict['InstallDir'] = InstallDir
+                    #Copy the save to the server with the dictionary we just created
+                    CopySaveToServer(SaveDict, MaxSaves)
+                    #Create SQL Entries for the newly synced save file, setting it as the new most recent save in our database 
+                    if len(ClientSaveSQLData) > 0:
+                        SQLUpdateEntry('ClientSaveInfo',{'Skipped': 0, 'InstallPath': InstallDir, 'MostRecentSaveTime': LocalSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')}, {'AppID': AppID, 'ClientID': ClientID })
+                    else:
+                        SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 0, 'InstallPath': InstallDir, 'MostRecentSaveTime': LocalSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')})
+                    if len(SavePrefixes) > 0: 
+                        SQLUpdateEntry('ClientPrefixes',{'Prefix': Prefix.replace('\'','\'\'')}, { 'AppID': AppID, 'ClientID': ClientID })
+                    else:
+                        SQLCreateEntry('ClientPrefixes',{'AppID': AppID, 'ClientID': ClientID, 'Prefix': Prefix.replace('\'','\'\'')})
+                    SQLCreateEntry('SaveTimestamps',{'AppID': AppID, 'Timestamp': LocalSaveTime})
+                    SQLUpdateEntry('SteamApps',{'MostRecentSaveTime': LocalSaveTime}, {'AppID': AppID })
+                    if len(Suffixes) > 0:
+                        for suffix in Suffixes:
+                            SQLCreateEntry('ClientSuffixes',{'AppID': AppID, 'ClientID': ClientID, 'Suffix': suffix})
+                elif LocalSaveTime <= MostRecentSaveTime and SteamCloud:
+                    print("Client has less recent steam cloud save than server!")
+                    print("Creating client save entries without overwriting server save...")
+                    print("Title: " + GameDataDict['Title'])
+                    print('AppID: ' + AppID)
+                    SaveDict['Timestamp'] = LocalSaveTime
+                    SaveDict['Prefix'] = Prefix
+                    SaveDict['Suffixes'] = Suffixes
+                    SaveDict['AppID'] = AppID
+                    SaveDict['ProtonPath'] = ProtonPath
+                    SaveDict['SteamPath'] = PathToSteam
+                    SaveDict['Home'] = HomeDir
+                    SaveDict['InstallDir'] = InstallDir
+                    #Create SQL Entries for the newly synced save file, setting it as the new most recent save in our database 
+                    if len(ClientSaveSQLData) > 0:
+                        SQLUpdateEntry('ClientSaveInfo',{'Skipped': 0, 'InstallPath': InstallDir, 'MostRecentSaveTime': LocalSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')}, {'AppID': AppID, 'ClientID': ClientID })
+                    else:
+                        SQLCreateEntry('ClientSaveInfo',{'AppID': AppID, 'ClientID': ClientID, 'Skipped': 0, 'InstallPath': InstallDir, 'MostRecentSaveTime': LocalSaveTime, 'ProtonPrefix': ProtonPath.replace('\'','\'\'')})
+                    if len(SavePrefixes) > 0: 
+                        SQLUpdateEntry('ClientPrefixes',{'Prefix': Prefix.replace('\'','\'\'')}, { 'AppID': AppID, 'ClientID': ClientID })
+                    else:
+                        SQLCreateEntry('ClientPrefixes',{'AppID': AppID, 'ClientID': ClientID, 'Prefix': Prefix.replace('\'','\'\'')})
+                    SQLUpdateEntry('SteamApps',{'MostRecentSaveTime': LocalSaveTime}, {'AppID': AppID })
+                    if len(Suffixes) > 0:
+                        for suffix in Suffixes:
+                            SQLCreateEntry('ClientSuffixes',{'AppID': AppID, 'ClientID': ClientID, 'Suffix': suffix})
                 #If the local save time is less up to date than the save on the server
                 elif MostRecentSaveTime > LocalSaveTime and not SteamCloud:
                     #We initialize new variables for our absolute paths
@@ -1542,6 +1598,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                         SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
     #We iterate through our remaining search directories
     for directory in SearchDirs:
+
         #We check whether this is a Steam-defined non-steam game, only continuing if we're searching in the ~/Games directory
         if 'compatdata' not in directory:
             #We get the last folder name of our filepath
@@ -1594,6 +1651,43 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                             MatchedDirs.append(PrefixDirName)
                             except yaml.YAMLError as exc:
                                 print(exc)
+    UserDataPath = PathToSteam + '/userdata/'
+    if os.path.isdir(UserDataPath):
+        for userfolder in os.listdir(UserDataPath):
+            if userfolder != '0':
+                if os.path.isfile(UserDataPath + userfolder + '/config/shortcuts.vdf'):
+                    with open(UserDataPath + userfolder + '/config/shortcuts.vdf','rb') as binFile:
+                        while (binBytes := binFile.read()):
+                            dataLoad = vdf.binary_loads(binBytes)
+                            dataDump = vdf.dumps(dataLoad)
+                            shortcutDict = vdf.loads(dataDump)
+                            for val in shortcutDict['shortcuts']:
+                                steamAppDict = shortcutDict['shortcuts'][val]
+                                #(appid << 32) | 0x02000000
+                                localAppID = (int(steamAppDict['appid'])) + 2**32
+                                localAppName = steamAppDict['AppName']
+                                exePath = steamAppDict['Exe']
+                                PCGWDict = {}
+                                if exePath.split('.')[-1].replace('"','').replace("'","").lower() == 'exe':
+                                    appDict = {}
+                                    appDict['Home'] = os.path.expanduser('~')
+                                    if '(' in localAppName and ')' in localAppName:
+                                        appDict['AppName'] = re.sub("[\(\[].*?[\)\]]", "", localAppName).strip()
+                                    else:
+                                        appDict['AppName'] = localAppName
+                                    if ':' in appDict['AppName']:
+                                        appDict['AppName'] = appDict['AppName'].replace(':',' -')
+                                    appDict['InstallDir'] = steamAppDict['StartDir']
+                                    appDict['ProtonPath'] = PathToSteam + 'steamapps/compatdata/' + str(localAppID) + '/pfx/'
+                                    if appDict['AppName']:
+                                        PCGWDict = GetPCGWData(appDict,'Lutris')
+                                    else: 
+                                        PCGWDict['Found'] = False
+                                    if PCGWDict['Found']:
+                                        print('Nonsteam Game ' + appDict['AppName'] + ' Located!')
+                                        NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
+                                        SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': appDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
+                                        SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves) 
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
