@@ -442,7 +442,7 @@ def InitializeDatabase():
             print("All tables needed present in database.")
             print('Database successfully initialized!')
         else:
-            print("Still missing tables! Consider deleting your saves.db file and rerunning SaveSync.py")
+            print("Still missing tables! Consider deleting your saves.db file and rerunning SaveSync.AppImage")
         GlobalVarCheck = SQLGetEntry('GlobalVars', {})
         if len(GlobalVarCheck) == 0:
             GenerateGlobalVars()

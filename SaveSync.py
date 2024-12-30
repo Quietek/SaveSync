@@ -102,10 +102,10 @@ if (__name__ == "__main__"):
         #Extra terminal output for first runs to give the users ome extra information
         if FirstRunFlag:
             print('First Sync successfully completed!')
-            print('To run another full system sync, execute ./SaveSync.py --sync from a terminal.')
-            print('To add a new non-Steam game, execute ./SaveSync.py --add title={ GAME TITLE HERE } path={ PATH TO GAME SAVE DIRECTORY HERE }')
-            print('If you want to use a custom path to sync an already backed up non-Steam game, execute ./SaveSync.py --add gameid={ GAMEID HERE } path={PATH TO GAME SAVE DIRECTORY HERE}')
-            print('You can also run ./SaveSync.py with no command line arguments again to get an interactive client for all of these functions.')
+            print('To run another full system sync, execute ./SaveSync.AppImage --sync from a terminal.')
+            print('To add a new non-Steam game, execute ./SaveSync.AppImage --add title={ GAME TITLE HERE } path={ PATH TO GAME SAVE DIRECTORY HERE }')
+            print('If you want to use a custom path to sync an already backed up non-Steam game, execute ./SaveSync.AppImage --add gameid={ GAMEID HERE } path={PATH TO GAME SAVE DIRECTORY HERE}')
+            print('You can also run ./SaveSync.AppImage with no command line arguments again to get an interactive client for all of these functions.')
     #The next section revolves around the add command line argument, which indicates we are either syncing a custom path for a known non-Steam game or adding a new non-Steam game
     elif CommandFlag == 'add':
         #If a game ID is specified and a path is specified, we treat this as if we are syncing a known game with the client
@@ -167,8 +167,8 @@ if (__name__ == "__main__"):
         #Extra end-user information if we couldn't either read in a GameID and path or a Title and a path
         else:
             print('ERROR: Make sure you only specify one game at a time, in one of the following formats:')
-            print('./SaveSync.py --add path={ Save Path } TITLE={ TITLE } to add a new non-steam game')
-            print('./SaveSync.py --add GameID={ Game ID } PATH={ SAVE PATH } to manually specify a save path for a client\'s install of a non-steam game')
+            print('./SaveSync.AppImage --add path={ Save Path } TITLE={ TITLE } to add a new non-steam game')
+            print('./SaveSync.AppImage --add GameID={ Game ID } PATH={ SAVE PATH } to manually specify a save path for a client\'s install of a non-steam game')
     #We use this to list all the known steam and non-steam games for the user
     elif CommandFlag == 'list':
         SteamGames = SQLGetEntry('Steamapps', {})
@@ -177,7 +177,7 @@ if (__name__ == "__main__"):
         GameIDList = GameListReadAndPrint('GameID', NonSteamGames)
     #Help menu, displays information on how to use SaveSync
     elif CommandFlag == 'help':
-        print('To bring up this help menu, run ./SaveSync.py --help')
+        print('To bring up this help menu, run ./SaveSync.AppImage --help')
         print('GENERAL INFORMATION: ')
         print('[]\'s indicate optional command line arguments')
         print('If {}\'s are listed in a formatting tooltip, that means to replace the contents with your custom values.')
@@ -186,13 +186,13 @@ if (__name__ == "__main__"):
         print('There are Three GAME TYPES: ROMs, Steam, and non-Steam')
         print('==============================================================================================================')
         print('COMMAND LINE OPTIONS:')
-        print('To bring up this menu run ./SaveSync.py --help')
-        print('To get a list of games run ./SaveSync.py  --list [GAMETYPE={ GAME TYPE }] [INSTALLED={ TRUE OR FALSE }]')
+        print('To bring up this menu run ./SaveSync.AppImage --help')
+        print('To get a list of games run ./SaveSync.AppImage  --list [GAMETYPE={ GAME TYPE }] [INSTALLED={ TRUE OR FALSE }]')
         print('         INSTALLED command line argument will limit output to only games that are registered to this client.')
         print('         GAMETYPE command line argument will limit the output to a specific game type.')
         print('         NOTE: ROMs and ROM Saves are not currently supported by this function')
-        print('To run a full system scan and sync, run ./SaveSync.py --sync in a terminal')
-        print('To add a new non-steam game, run ./SaveSync.py --add [GAMEID={ GAMEID }] TITLE={ GAME TITLE } PATH={ SAVE PATH }')
+        print('To run a full system scan and sync, run ./SaveSync.AppImage --sync in a terminal')
+        print('To add a new non-steam game, run ./SaveSync.AppImage --add [GAMEID={ GAMEID }] TITLE={ GAME TITLE } PATH={ SAVE PATH }')
         print('         Optional command line argument GAMEID is to be used when specifying a custom save path for an already backed up non-Steam save.')
         print('==============================================================================================================')
         print('INTERACTIVE MODE:')
