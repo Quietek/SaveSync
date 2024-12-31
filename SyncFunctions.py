@@ -1677,7 +1677,14 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                         appDict['AppName'] = localAppName
                                     if ':' in appDict['AppName']:
                                         appDict['AppName'] = appDict['AppName'].replace(':',' -')
-                                    appDict['InstallDir'] = steamAppDict['StartDir']
+                                    if steamAppDict['StartDir'].split('/')[-1].lower() == 'binaries':
+                                        appDict['InstallDir'] = steamAppDict['StartDir'].replace(steamAppDict['StartDir'].split('/')[-1],'')
+                                    elif (len(steamAppDict['StartDir'].split('/')) > 1 and steamAppDict['StartDir'].split('/')[-2].lower() == 'binaries'):
+                                        appDict['InstallDir'] = steamAppDict['StartDir'].replace(steamAppDict['StartDir'].split('/')[-2] + '/','')
+                                    else:
+                                        appDict['InstallDir'] = steamAppDict['StartDir']
+                                    if 'Gears' in appDict['AppName']:
+                                        print(appDict['InstallDir'])
                                     appDict['ProtonPath'] = PathToSteam + 'steamapps/compatdata/' + str(localAppID) + '/pfx/'
                                     if appDict['AppName']:
                                         PCGWDict = GetPCGWData(appDict,'Lutris')
