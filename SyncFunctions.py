@@ -914,11 +914,11 @@ def GetPCGWData(ApplicationDict, GameType='Steam'):
     if (LinuxSave or SteamSave or WindowsSave): 
         #We call our parse save data function to take the raw text from PCGW and turn it into a usable file path
         SaveDataList = ParseSaveData(ApplicationDict, RawSaveDataDict, GameType)
-        if 'Gears' in ApplicationDict['AppName']:
+        if 'AppName' in ApplicationDict and 'Gears' in ApplicationDict['AppName']:
             print(SaveDataList)
         #We call our verifylocaldata function with our new save paths, so we can find which files exist that we potentially want to backup
         VerifiedSaveDataDict = VerifyLocalData(SaveDataList)
-        if 'Gears' in ApplicationDict['AppName']:
+        if 'AppName' in ApplicationDict and 'Gears' in ApplicationDict['AppName']:
             print(VerifiedSaveDataDict)
         #Initialize our return values
         ReturnDict['AbsoluteSavePaths'] = []
