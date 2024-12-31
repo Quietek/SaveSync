@@ -1687,6 +1687,8 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                         appDict['InstallDir'] = steamAppDict['StartDir'].replace(steamAppDict['StartDir'].split('/')[-2] + '/','')
                                     else:
                                         appDict['InstallDir'] = steamAppDict['StartDir']
+                                    if '"' in appDict['InstallDir'] or "'" in appDict['InstallDir']:
+                                        appDict['InstallDir'] = appDict['InstallDir'].replace('"','').replace("'","")
                                     if 'Gears' in appDict['AppName']:
                                         print(appDict['InstallDir'])
                                     appDict['ProtonPath'] = PathToSteam + 'steamapps/compatdata/' + str(localAppID) + '/pfx/'
