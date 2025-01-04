@@ -1530,7 +1530,6 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                 MatchedDirs.append(LocalGame['LocalSavePath'].replace(HomeDir + '/Games/','').split(['/'])[0])
             SyncNonSteamGame(LocalGame['GameID'], LocalGame['LocalSavePath'], LocalGame['MostRecentSaveTime'], ClientID, MaxSaves, UIDFolderFlag)
             FoundGames.append(LocalGame['GameID'])
-            
     #variable initialization to create a list of games we need to search for
     SearchableGames = []
     #We only care about non-steam games we already know about
@@ -1560,7 +1559,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                         #We flag that we found the save path we were looking for
                         found = True
                         #We call the SyncNonSteamGame function for any saves that predate our server save time as well
-                        MatchedDirs.append(SearchDirs[i].split('/')[-1])
+                        SearchDirs.remove(SearchDirs[i])
                         SyncNonSteamGame(game['GameID'], SearchDirs[i] + WinPath, game['MostRecentSaveTime'], ClientID, MaxSaves)
                         #Iteration through our list of directories when we haven't found the expected save path yet
                     else:
@@ -1598,7 +1597,6 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                         SyncNonSteamGame(game['GameID'], FullPath, game['MostRecentSaveTime'], ClientID, MaxSaves, InsideFolderFlag)
     #We iterate through our remaining search directories
     for directory in SearchDirs:
-
         #We check whether this is a Steam-defined non-steam game, only continuing if we're searching in the ~/Games directory
         if 'compatdata' not in directory:
             #We get the last folder name of our filepath
@@ -1623,6 +1621,7 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                 #we check for our expected declarations in the lutris file
                                 if 'game' in LutrisDict:
                                     if 'exe' in LutrisDict['game']:
+                                        AlreadyRegistered = False
                                         #we use the game exe's location as the install path
                                         #NOTE: this is likely not going to work in 100% of cases, as a game can have it's exe located in a subdirectory.
                                         InstallDir = LutrisDict['game']['exe'].replace(LutrisDict['game']['exe'].split('/')[-1],'')
@@ -1634,21 +1633,27 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                         AppDict['AppName'] = AppName
                                         AppDict['InstallDir'] = InstallDir
                                         AppDict['ProtonPath'] = ProtonPath
-                                        #if the game has an install directory specified
-                                        if AppDict['InstallDir'] != '':
-                                            #we look on PC Gaming Wiki for our game
-                                            PCGWDict = GetPCGWData(AppDict,'Lutris')
-                                        #if no install directory is specified, we simply ignore the game.
-                                        else:
-                                            PCGWDict['Found'] = False
-                                        #If we found a game using our PCGW API call
-                                        if PCGWDict['Found']:
-                                            #We tell the user a new game has been added and sync our newly located non-steam game
-                                            print('Nonsteam Game ' + AppDict['AppName'] + ' Located!')
-                                            NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
-                                            SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': AppDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
-                                            SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves)
-                                            MatchedDirs.append(PrefixDirName)
+                                        AppRegistered = SQLGetEntry('NonSteamApps', {'Title': AppDict['AppName']})
+                                        if len(AppRegistered) > 0:
+                                            ClientSaveEntries = SQLGetEntry('NonSteamClientSaves',{ 'ClientID': ClientID, 'GameID': AppRegistered[0]['GameID']})
+                                            if len(ClientSaveEntries) > 0:
+                                                AlreadyRegistered = True
+                                        if not AlreadyRegistered:
+                                            #if the game has an install directory specified
+                                            if AppDict['InstallDir'] != '':
+                                                #we look on PC Gaming Wiki for our game
+                                                PCGWDict = GetPCGWData(AppDict,'Lutris')
+                                            #if no install directory is specified, we simply ignore the game.
+                                            else:
+                                                PCGWDict['Found'] = False
+                                            #If we found a game using our PCGW API call
+                                            if PCGWDict['Found']:
+                                                #We tell the user a new game has been added and sync our newly located non-steam game
+                                                print('Nonsteam Game ' + AppDict['AppName'] + ' Located!')
+                                                NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
+                                                SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': AppDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
+                                                SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves)
+                                                MatchedDirs.append(PrefixDirName)
                             except yaml.YAMLError as exc:
                                 print(exc)
     UserDataPath = PathToSteam + '/userdata/'
@@ -1686,15 +1691,17 @@ def SyncNonSteamLibrary(ClientID, PathToSteam, HomeDir, MaxSaves):
                                     if '"' in appDict['InstallDir'] or "'" in appDict['InstallDir']:
                                         appDict['InstallDir'] = appDict['InstallDir'].replace('"','').replace("'","")
                                     appDict['ProtonPath'] = PathToSteam + 'steamapps/compatdata/' + str(localAppID) + '/pfx/'
-                                    if appDict['AppName']:
-                                        PCGWDict = GetPCGWData(appDict,'Lutris')
-                                    else: 
-                                        PCGWDict['Found'] = False
-                                    if PCGWDict['Found']:
-                                        print('Nonsteam Game ' + appDict['AppName'] + ' Located!')
-                                        NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
-                                        SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': appDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
-                                        SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves) 
+                                    AppExists = SQLGetEntry('NonSteamApps', {'Title': appDict['AppName']})
+                                    if len(AppExists) == 0:
+                                        if appDict['AppName']:
+                                            PCGWDict = GetPCGWData(appDict,'Lutris')
+                                        else: 
+                                            PCGWDict['Found'] = False
+                                        if PCGWDict['Found']:
+                                            print('Nonsteam Game ' + appDict['AppName'] + ' Located!')
+                                            NewGameId = SQLGetMinMax('NonSteamApps','GameId',{})[0]['MaxVal'] + 1
+                                            SQLCreateEntry('NonSteamApps',{'GameID': NewGameId, 'Title': appDict['AppName'], 'RelativeSavePath': PCGWDict['RelativeSavePaths'][0]})
+                                            SyncNonSteamGame(NewGameId, PCGWDict['AbsoluteSavePaths'][0], 0, ClientID, MaxSaves) 
     return 0 
 #This function is for 
 #TODO integrate the number of saves cap that the user specified at the first run
